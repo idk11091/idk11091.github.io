@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Portfolio of [Your Name] — QA Engineer & Developer." />
+  <title>[Your Name] — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ===== Header / Nav ===== -->
+  <header class="site-header" id="top">
+    <nav class="nav container" aria-label="Primary">
+      <a href="#top" class="nav__brand">[Your<span>Name]</span></a>
+
+      <button class="nav__toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navMenu">
+        <span></span><span></span><span></span>
+      </button>
+
+      <ul class="nav__menu" id="navMenu">
+        <li><a href="#about" class="nav__link">About</a></li>
+        <li><a href="#skills" class="nav__link">Skills</a></li>
+        <li><a href="#projects" class="nav__link">Projects</a></li>
+        <li><a href="#experience" class="nav__link">Experience</a></li>
+        <li><a href="#blog" class="nav__link">Blog</a></li>
+        <li><a href="#contact" class="nav__link">Contact</a></li>
+        <li>
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle color theme">
+            <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===== Hero ===== -->
+    <section class="hero container" id="hero">
+      <div class="hero__content">
+        <p class="hero__eyebrow">Hi, my name is</p>
+        <h1 class="hero__title">[Your Name]</h1>
+        <h2 class="hero__subtitle">I build quality software &amp; break it before users do.</h2>
+        <p class="hero__lead">
+          [One or two sentences about you — e.g. "A QA engineer and developer who designs
+          test automation, writes tooling, and ships reliable products."]
+        </p>
+        <div class="hero__actions">
+          <a href="#projects" class="btn btn--primary">View my work</a>
+          <a href="#contact" class="btn btn--ghost">Get in touch</a>
+        </div>
+        <ul class="hero__socials" aria-label="Social links">
+          <li><a href="#" aria-label="GitHub">GitHub</a></li>
+          <li><a href="#" aria-label="LinkedIn">LinkedIn</a></li>
+          <li><a href="mailto:you@example.com" aria-label="Email">Email</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== About ===== -->
+    <section class="section container" id="about">
+      <h2 class="section__title"><span class="section__num">01.</span> About me</h2>
+      <div class="about">
+        <div class="about__text">
+          <p>
+            [Write a short intro here. Who are you, what do you enjoy working on, and what
+            mix of QA and development do you do? Keep it conversational — a few short paragraphs.]
+          </p>
+          <p>
+            [Mention the kinds of problems you like solving, technologies you reach for, and
+            what makes your approach to quality and building software distinct.]
+          </p>
+          <p>Here are a few technologies I work with:</p>
+          <ul class="about__tech" id="aboutTech">
+            <li>JavaScript</li>
+            <li>Node.js</li>
+            <li>MongoDB</li>
+            <li>Test Automation</li>
+            <li>HTML &amp; CSS</li>
+            <li>Git</li>
+          </ul>
+        </div>
+        <div class="about__photo">
+          <div class="about__photo-frame">
+            <img src="assets/profile-placeholder.svg" alt="Portrait of [Your Name]" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Skills ===== -->
+    <section class="section container" id="skills">
+      <h2 class="section__title"><span class="section__num">02.</span> Skills</h2>
+      <div class="skills">
+        <article class="skill-card">
+          <h3>Quality Assurance</h3>
+          <ul>
+            <li>Manual &amp; exploratory testing</li>
+            <li>Test automation</li>
+            <li>API &amp; data validation</li>
+            <li>Bug triage &amp; reporting</li>
+          </ul>
+        </article>
+        <article class="skill-card">
+          <h3>Development</h3>
+          <ul>
+            <li>JavaScript / Node.js</li>
+            <li>Scripting &amp; tooling</li>
+            <li>HTML, CSS, responsive UI</li>
+            <li>Working with databases</li>
+          </ul>
+        </article>
+        <article class="skill-card">
+          <h3>Tools &amp; Workflow</h3>
+          <ul>
+            <li>Git &amp; version control</li>
+            <li>MongoDB</li>
+            <li>CI / automation</li>
+            <li>[Add your tools]</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Projects ===== -->
+    <section class="section container" id="projects">
+      <h2 class="section__title"><span class="section__num">03.</span> Projects</h2>
+      <div class="projects" id="projectsGrid">
+        <!-- Project cards are rendered from js/main.js so they're easy to edit -->
+      </div>
+    </section>
+
+    <!-- ===== Experience ===== -->
+    <section class="section container" id="experience">
+      <h2 class="section__title"><span class="section__num">04.</span> Experience</h2>
+      <ol class="timeline">
+        <li class="timeline__item">
+          <div class="timeline__marker" aria-hidden="true"></div>
+          <div class="timeline__body">
+            <span class="timeline__date">[Year — Present]</span>
+            <h3 class="timeline__role">[Job Title] <span>@ [Company]</span></h3>
+            <p>[What you did and the impact you had. Use one or two bullet-style lines.]</p>
+          </div>
+        </li>
+        <li class="timeline__item">
+          <div class="timeline__marker" aria-hidden="true"></div>
+          <div class="timeline__body">
+            <span class="timeline__date">[Year — Year]</span>
+            <h3 class="timeline__role">[Job Title] <span>@ [Company]</span></h3>
+            <p>[What you did and the impact you had.]</p>
+          </div>
+        </li>
+        <li class="timeline__item">
+          <div class="timeline__marker" aria-hidden="true"></div>
+          <div class="timeline__body">
+            <span class="timeline__date">[Year — Year]</span>
+            <h3 class="timeline__role">[Job Title] <span>@ [Company]</span></h3>
+            <p>[What you did and the impact you had.]</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== Blog ===== -->
+    <section class="section container" id="blog">
+      <h2 class="section__title"><span class="section__num">05.</span> Blog &amp; Notes</h2>
+      <div class="blog" id="blogGrid">
+        <!-- Blog cards are rendered from js/main.js -->
+      </div>
+    </section>
+
+    <!-- ===== Contact ===== -->
+    <section class="section section--contact container" id="contact">
+      <h2 class="section__title section__title--center"><span class="section__num">06.</span> Get in touch</h2>
+      <p class="contact__lead">
+        [Invite people to reach out — a job, a collaboration, or just to say hi.
+        Let them know the best way to contact you.]
+      </p>
+      <a href="mailto:you@example.com" class="btn btn--primary btn--lg">Say hello</a>
+    </section>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>Built by [Your Name] · <span id="year"></span></p>
+    </div>
+  </footer>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>
