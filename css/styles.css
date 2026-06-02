@@ -5,7 +5,7 @@
 
 /* ----- Design tokens ----- */
 :root {
-  --bg: #0f1419;
+  --bg: #272d45; /* #0f1419 */
   --bg-soft: #161c24;
   --surface: #1b2330;
   --border: #263041;
