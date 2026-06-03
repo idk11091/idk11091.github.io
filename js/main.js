@@ -9,14 +9,12 @@
 
 const PROJECTS = [
   {
-    icon: "🧪",
-    title: "[Project One]",
+    icon: "🏥",
+    title: "Medtrix/MedtrixLabs",
     description:
-      "[Short description of what this project does and your role. " +
-      "Mention the problem it solved and the impact.]",
-    tags: ["JavaScript", "Node.js", "Testing"],
-    repo: "#",
-    demo: "#",
+      "An ERP system designed for hospitals, where almost all operations of a hospital can be conducted " +
+      "such as patient care, inventory management, finance and others. This also has a focus at a time for COVID-19 laboratories",
+    tags: ["Client Support", "QA Testing", "Jira"],
   },
   {
     icon: "⚙️",
@@ -25,8 +23,6 @@ const PROJECTS = [
       "[Short description. e.g. automation tooling, a script suite, " +
       "or a QA framework you built.]",
     tags: ["Automation", "MongoDB"],
-    repo: "#",
-    demo: "",
   },
   {
     icon: "🌐",
@@ -35,8 +31,6 @@ const PROJECTS = [
       "[Short description of a web or app project, what you built, " +
       "and the technologies involved.]",
     tags: ["HTML", "CSS", "JavaScript"],
-    repo: "#",
-    demo: "#",
   },
 ];
 
@@ -68,17 +62,12 @@ function renderProjects() {
   if (!grid) return;
 
   grid.innerHTML = PROJECTS.map((p) => {
-    const links = [
-      p.repo ? `<a href="${p.repo}" target="_blank" rel="noopener">Code</a>` : "",
-      p.demo ? `<a href="${p.demo}" target="_blank" rel="noopener">Live</a>` : "",
-    ].join("");
     const tags = p.tags.map((t) => `<span>${t}</span>`).join("");
 
     return `
       <article class="project-card reveal">
         <div class="project-card__top">
           <span class="project-card__icon" aria-hidden="true">${p.icon}</span>
-          <div class="project-card__links">${links}</div>
         </div>
         <h3>${p.title}</h3>
         <p>${p.description}</p>
