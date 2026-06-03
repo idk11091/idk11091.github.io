@@ -13,24 +13,18 @@ const PROJECTS = [
     title: "Medtrix/MedtrixLabs",
     description:
       "An ERP system designed for hospitals, where almost all operations of a hospital can be conducted " +
-      "such as patient care, inventory management, finance and others. This also has a focus at a time for COVID-19 laboratories",
+      "such as patient care, inventory management, finance and others. This also has a focus at a time for COVID-19 laboratories " +
+      "where it can get results from our Machine Integration, and capable of sending results to patients.",
     tags: ["Client Support", "QA Testing", "Jira"],
   },
   {
-    icon: "⚙️",
-    title: "[Project Two]",
+    icon: "🏫",
+    title: "School Management System (SMS)",
     description:
-      "[Short description. e.g. automation tooling, a script suite, " +
-      "or a QA framework you built.]",
-    tags: ["Automation", "MongoDB"],
-  },
-  {
-    icon: "🌐",
-    title: "[Project Three]",
-    description:
-      "[Short description of a web or app project, what you built, " +
-      "and the technologies involved.]",
-    tags: ["HTML", "CSS", "JavaScript"],
+      "Grading System with a built in Enrollment System. Handles grading and generates " +
+      "reports. In line with the enrollment system, it also supports an Invoicing System as well" +
+      "where it generates the enrollment invoices and is capable of handling customer payments.",
+    tags: ["Manual and Automation Testing", "MongoDB"],
   },
 ];
 
