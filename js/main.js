@@ -28,28 +28,6 @@ const PROJECTS = [
   },
 ];
 
-const POSTS = [
-  {
-    date: "[Mon YYYY]",
-    title: "[First post title]",
-    excerpt:
-      "[A one-or-two sentence teaser for the post. What will the reader learn?]",
-    url: "#",
-  },
-  {
-    date: "[Mon YYYY]",
-    title: "[Second post title]",
-    excerpt: "[Teaser for another note or article you want to share.]",
-    url: "#",
-  },
-  {
-    date: "[Mon YYYY]",
-    title: "[Third post title]",
-    excerpt: "[Teaser — testing tips, dev learnings, project write-ups, etc.]",
-    url: "#",
-  },
-];
-
 /* ---------- Render projects ---------- */
 function renderProjects() {
   const grid = document.getElementById("projectsGrid");
@@ -68,22 +46,6 @@ function renderProjects() {
         <div class="project-card__tags">${tags}</div>
       </article>`;
   }).join("");
-}
-
-/* ---------- Render blog posts ---------- */
-function renderPosts() {
-  const grid = document.getElementById("blogGrid");
-  if (!grid) return;
-
-  grid.innerHTML = POSTS.map(
-    (post) => `
-      <article class="blog-card reveal">
-        <span class="blog-card__date">${post.date}</span>
-        <h3>${post.title}</h3>
-        <p>${post.excerpt}</p>
-        <a class="blog-card__read" href="${post.url}">Read more →</a>
-      </article>`
-  ).join("");
 }
 
 /* ---------- Theme toggle (persisted) ---------- */
@@ -172,7 +134,6 @@ function initReveal() {
 /* ---------- Init ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   renderProjects();
-  renderPosts();
   initTheme();
   initNav();
   initScrollSpy();
