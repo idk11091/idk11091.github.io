@@ -1,11 +1,12 @@
 /* =========================================================
-   [Your Name] — Portfolio interactions
-   Vanilla JS, no dependencies.
+   Arvin Joseph Gonzaga — Portfolio interactions
    ========================================================= */
 
-/* ---------- Editable content ----------
-   Edit these arrays to add/remove cards. No HTML knowledge needed —
-   just change the text between the quotes. */
+/* 
+==============================================================
+====================== PROJECTS DATA =========================
+==============================================================
+*/
 
 const PROJECTS = [
   {
@@ -25,7 +26,7 @@ const PROJECTS = [
       "reports. In line with the enrollment system, it also supports an Invoicing System as well" +
       "where it generates the enrollment invoices and is capable of handling customer payments.",
     tags: ["Manual and Automation Testing", "MongoDB"],
-  },
+  }
 ];
 
 /* ---------- Render projects ---------- */
@@ -46,29 +47,6 @@ function renderProjects() {
         <div class="project-card__tags">${tags}</div>
       </article>`;
   }).join("");
-}
-
-/* ---------- Theme toggle (persisted) ---------- */
-function initTheme() {
-  const toggle = document.getElementById("themeToggle");
-  const icon = toggle?.querySelector(".theme-toggle__icon");
-  const root = document.documentElement;
-
-  const stored = localStorage.getItem("theme");
-  const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-  const initial = stored || (prefersLight ? "light" : "dark");
-  applyTheme(initial);
-
-  function applyTheme(theme) {
-    root.setAttribute("data-theme", theme);
-    if (icon) icon.textContent = theme === "light" ? "☀️" : "🌙";
-  }
-
-  toggle?.addEventListener("click", () => {
-    const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
-    applyTheme(next);
-    localStorage.setItem("theme", next);
-  });
 }
 
 /* ---------- Mobile nav ---------- */
@@ -134,7 +112,6 @@ function initReveal() {
 /* ---------- Init ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   renderProjects();
-  initTheme();
   initNav();
   initScrollSpy();
   initReveal();
