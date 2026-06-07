@@ -263,7 +263,42 @@ a { color: inherit; text-decoration: none; }
 .project-card__links a { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
 .project-card__links a:hover { color: var(--accent); }
 .project-card h3 { margin: 0 0 0.5rem; font-size: 1.25rem; }
-.project-card p { color: var(--text-muted); font-size: 0.95rem; flex-grow: 1; }
+.project-card p { color: var(--text-muted); font-size: 0.95rem; }
+.project-card__work-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.project-card__work {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+}
+.project-card__work h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+.project-card__work ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.project-card__work li {
+  position: relative;
+  padding-left: 1.2rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.project-card__work li::before {
+  content: "▹";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
 .project-card__tags {
   display: flex;
   flex-wrap: wrap;
