@@ -25,8 +25,16 @@ const PROJECTS = [
       "Grading System with a built in Enrollment System. Handles grading and generates " +
       "reports. In line with the enrollment system, it also supports an Invoicing System as well" +
       "where it generates the enrollment invoices and is capable of handling customer payments.",
-    tags: ["Manual and Automation Testing", "MongoDB"],
+    tags: ["Manual and Automation Testing", "MongoDB", "Client Support"],
+  },
+    {
+    icon: "🛒",
+    title: "Ads Management System Tool",
+    description:
+      "Created ",
+    tags: ["JSON","S3 Repository",],
   }
+  
 ];
 
 /* ---------- Render projects ---------- */
