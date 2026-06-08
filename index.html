@@ -30,6 +30,74 @@
     </nav>
   </header>
 
+  <!-- ===== Journal login modal (opens only when URL ends with #journal) ===== -->
+  <div class="modal" id="authModal" hidden>
+    <div class="modal__backdrop" data-close="true"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="modal__close" id="authClose" type="button" aria-label="Close">&times;</button>
+      <h2 class="modal__title" id="authTitle">Private Journal</h2>
+      <p class="modal__subtitle">Sign in to continue.</p>
+
+      <form id="authForm" class="auth-form" novalidate>
+        <label class="auth-form__field">
+          <span>Email</span>
+          <input type="email" id="authEmail" required autocomplete="email" placeholder="you@example.com" />
+        </label>
+        <label class="auth-form__field">
+          <span>Password</span>
+          <input type="password" id="authPassword" required minlength="6" autocomplete="current-password" placeholder="Your password" />
+        </label>
+
+        <p class="auth-form__msg" id="authMsg" role="alert" hidden></p>
+
+        <button type="submit" class="btn btn--primary btn--full" id="authSubmit">Sign in</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Journal (full-screen, shown only when signed in) ===== -->
+  <div class="journal" id="journal" hidden>
+    <header class="journal__bar">
+      <div class="container journal__bar-inner">
+        <span class="journal__brand">My Journal</span>
+        <div class="journal__meta">
+          <span class="journal__user" id="journalUser"></span>
+          <button class="btn btn--ghost btn--sm" id="journalLogout" type="button">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container journal__main">
+      <!-- List view: compose box + clickable entries -->
+      <div id="journalHome">
+        <form class="journal__compose" id="entryForm">
+          <input type="text" id="entryTitle" class="journal__title-input" placeholder="Title (optional)" maxlength="120" autocomplete="off" />
+          <textarea id="entryText" rows="5" placeholder="What's on your mind today?" required></textarea>
+          <div class="journal__compose-row">
+            <span class="journal__msg" id="entryMsg" hidden></span>
+            <button type="submit" class="btn btn--primary" id="entrySave">Save entry</button>
+          </div>
+        </form>
+
+        <p class="journal__empty" id="journalEmpty" hidden>No entries yet — write your first one above.</p>
+        <ul class="journal__list" id="entryList"></ul>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Entry reading modal: a clicked card pops open here over a blurred backdrop -->
+  <div class="modal" id="entryModal" hidden>
+    <div class="modal__backdrop" data-close="true"></div>
+    <div class="modal__card modal__card--entry" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+      <button class="modal__close" id="detailClose" type="button" aria-label="Close">&times;</button>
+      <h2 class="entry-detail__title" id="detailTitle"></h2>
+      <span class="entry-detail__date" id="detailDate"></span>
+      <div class="entry-detail__body" id="detailBody"></div>
+      <button class="btn btn--ghost btn--sm entry-detail__delete" id="detailDelete" type="button">Delete entry</button>
+    </div>
+  </div>
+
   <main>
     <!-- ===== Hero ===== -->
     <section class="hero container" id="hero">
@@ -314,5 +382,8 @@ different locations.</p>
   </footer>
 
   <script src="js/main.js" defer></script>
+  <!-- Firebase auth + journal (ES modules — load Firebase from its CDN, no npm needed) -->
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/journal.js"></script>
 </body>
 </html>
