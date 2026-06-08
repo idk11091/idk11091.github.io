@@ -9,6 +9,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAAxzG9RUsA9UXYwNWvuemLeRZ_s44YcDs",
@@ -23,3 +24,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Visitor analytics (Google Analytics). Auto-collects page views, visitor
+// counts, location, device/browser, and traffic source. Guarded by
+// isSupported() so it never breaks the page where analytics can't run.
+isSupported().then((ok) => { if (ok) getAnalytics(app); });

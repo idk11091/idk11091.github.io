@@ -7,7 +7,7 @@
    - When signed in, the full-screen journal is shown.
    ========================================================= */
 
-import { auth } from "./firebase-config.js";
+import { auth } from "./firebase-config.js?v=3";
 import {
   signInWithEmailAndPassword,
   signOut,

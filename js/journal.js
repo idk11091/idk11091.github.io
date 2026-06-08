@@ -6,7 +6,7 @@
    with the author's uid; Security Rules enforce who can read.
    ========================================================= */
 
-import { auth, db } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js?v=3";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   collection,
