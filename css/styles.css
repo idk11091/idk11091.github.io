@@ -236,13 +236,71 @@ body.journal-open { overflow: hidden; } /* freeze the portfolio behind the journ
 .journal__title-input:focus { outline: none; border-color: var(--accent); }
 .journal__title-input::placeholder { font-weight: 500; color: var(--text-muted); }
 
-.journal__compose textarea {
-  width: 100%;
-  resize: vertical;
-  min-height: 110px;
+/* Rich-text editor */
+.editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.editor__btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.5rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.editor__btn:hover { border-color: var(--accent); color: var(--accent); }
+.editor__btn.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.editor__sep { width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem; }
+.editor__select {
+  height: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0 0.4rem;
+  cursor: pointer;
+}
+.editor__select.is-active { border-color: var(--accent); color: var(--accent); }
+.editor__color {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 32px;
+  padding: 0 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.editor__color input[type="color"] {
+  width: 22px; height: 22px;
+  border: 0; background: none; padding: 0; cursor: pointer;
+}
+.editor__area {
+  min-height: 130px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   padding: 0.85rem;
   color: var(--text);
   font: inherit;
@@ -250,7 +308,12 @@ body.journal-open { overflow: hidden; } /* freeze the portfolio behind the journ
   line-height: 1.6;
   transition: border-color var(--transition);
 }
-.journal__compose textarea:focus { outline: none; border-color: var(--accent); }
+.editor__area:focus { outline: none; border-color: var(--accent); }
+.editor__area:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
 .journal__compose-row {
   display: flex;
   align-items: center;
@@ -320,7 +383,16 @@ body.journal-open { overflow: hidden; } /* freeze the portfolio behind the journ
   color: var(--text-muted);
   font-size: 0.95rem;
   word-break: break-word;
+  /* Show formatting but keep cards tidy: clamp to 3 lines with an ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+/* Tame oversized formatting inside the small card preview */
+.entry__snippet * { font-size: inherit !important; line-height: 1.5 !important; }
+.entry__snippet p, .entry__snippet div { margin: 0; display: inline; }
 
 /* ----- Single-entry reading popup ----- */
 .modal__card--entry {

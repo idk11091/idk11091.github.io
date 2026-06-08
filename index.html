@@ -72,7 +72,38 @@
       <div id="journalHome">
         <form class="journal__compose" id="entryForm">
           <input type="text" id="entryTitle" class="journal__title-input" placeholder="Title (optional)" maxlength="120" autocomplete="off" />
-          <textarea id="entryText" rows="5" placeholder="What's on your mind today?" required></textarea>
+
+          <!-- Formatting toolbar -->
+          <div class="editor__toolbar" id="editorToolbar">
+            <button type="button" class="editor__btn" data-cmd="bold" title="Bold"><b>B</b></button>
+            <button type="button" class="editor__btn" data-cmd="italic" title="Italic"><i>I</i></button>
+            <button type="button" class="editor__btn" data-cmd="underline" title="Underline"><u>U</u></button>
+
+            <span class="editor__sep" aria-hidden="true"></span>
+
+            <select class="editor__select" data-cmd="fontName" title="Font" aria-label="Font">
+              <option value="">Font</option>
+              <option value="Inter, sans-serif">Sans</option>
+              <option value="Georgia, serif">Serif</option>
+              <option value="monospace">Mono</option>
+            </select>
+            <select class="editor__select" data-cmd="fontSize" title="Size" aria-label="Text size">
+              <option value="">Size</option>
+              <option value="2">Small</option>
+              <option value="3">Normal</option>
+              <option value="5">Large</option>
+              <option value="6">Huge</option>
+            </select>
+
+            <label class="editor__color" title="Text color">
+              <span aria-hidden="true">A</span>
+              <input type="color" id="editorColor" value="#4d8dff" aria-label="Text color" />
+            </label>
+          </div>
+
+          <!-- The editable area (rich text) -->
+          <div id="entryEditor" class="editor__area" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="What's on your mind today?"></div>
+
           <div class="journal__compose-row">
             <span class="journal__msg" id="entryMsg" hidden></span>
             <button type="submit" class="btn btn--primary" id="entrySave">Save entry</button>
