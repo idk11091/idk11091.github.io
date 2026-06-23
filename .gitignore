@@ -1,0 +1,28 @@
+# === Operating system junk files ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Editor / IDE settings ===
+.vscode/
+.idea/
+*.swp
+
+# === Secrets / credentials (never upload these) ===
+.env
+.env.*
+*.key
+serviceAccountKey.json
+firebase-adminsdk*.json
+
+# === Dependencies / build output (if you ever add them) ===
+node_modules/
+dist/
+build/
+
+# === Logs ===
+*.log
+
+# === PDF files (e.g. resume) ===
+
+*.pdf
