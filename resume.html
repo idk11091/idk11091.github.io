@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Arvin Joseph H. Gonzaga — Resume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --accent: #2f6fe0;        /* portfolio blue, darkened slightly for print contrast */
+    --accent-bright: #4d8dff; /* portfolio accent */
+    --ink: #1c2230;
+    --muted: #555c6b;
+    --rule: #c9d6ef;
+  }
+  @page { size: A4; margin: 9mm 13mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Inter", system-ui, "Segoe UI", Arial, sans-serif;
+    color: var(--ink);
+    font-size: 8.5pt;
+    line-height: 1.24;
+  }
+
+  /* ===== Header ===== */
+  header { margin-bottom: 2px; }
+  .name {
+    font-size: 22pt;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    line-height: 1.05;
+  }
+  .contact {
+    font-size: 8pt;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .contact a { color: var(--muted); text-decoration: none; }
+  .header-rule { border: none; border-top: 2px solid var(--accent); margin-top: 5px; }
+
+  /* ===== Two-column section rows ===== */
+  .row {
+    display: grid;
+    grid-template-columns: 124px 1fr;
+    gap: 16px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .row:last-child { border-bottom: none; }
+  .label {
+    font-size: 9.5pt;
+    font-weight: 800;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.15;
+  }
+  .summary { text-align: justify; }
+
+  /* ===== Experience / Education entries ===== */
+  .entry { margin-bottom: 5px; }
+  .entry:last-child { margin-bottom: 0; }
+  .entry__head { display: flex; justify-content: space-between; align-items: baseline; }
+  .entry__title { font-weight: 700; color: var(--ink); }
+  .entry__date { font-weight: 700; color: var(--ink); white-space: nowrap; padding-left: 12px; }
+  .entry__sub { color: var(--muted); margin-bottom: 1px; }
+
+  ul { list-style: none; }
+  ul li { position: relative; padding-left: 13px; margin-bottom: 1px; text-align: justify; }
+  ul li::before {
+    content: "•"; position: absolute; left: 1px; top: -0.5px; color: var(--accent-bright);
+  }
+
+  /* ===== Two-column skills grid ===== */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
+
+  .tech { line-height: 1.5; }
+  .placeholder { color: #b03030; font-style: italic; }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="name">ARVIN JOSEPH H. GONZAGA</div>
+    <div class="contact">
+      arvin.joseph1998@gmail.com &nbsp;|&nbsp; linkedin.com/in/arvin-joseph-gonzaga &nbsp;|&nbsp;
+      github.com/idk11091 &nbsp;|&nbsp; idk11091.github.io
+    </div>
+    <hr class="header-rule" />
+  </header>
+
+  <!-- ===== Summary ===== -->
+  <div class="row">
+    <div class="label">Summary</div>
+    <div class="summary">
+      Solution-oriented and detail-focused Manual QA Engineer with hands-on customer support
+      experience, using AI to enhance productivity and efficiency. Skilled in functional, regression
+      and API testing across desktop, web and mobile applications. The combined perspective of QA and
+      client support gives an edge in understanding how users actually behave — insight brought
+      directly into test cases while keeping everything aligned with business requirements. Currently
+      expanding into automation testing with Cypress and building tools with Git &amp; GitHub.
+    </div>
+  </div>
+
+  <!-- ===== Work Experience ===== -->
+  <div class="row">
+    <div class="label">Work Experience</div>
+    <div>
+      <div class="entry">
+        <div class="entry__head">
+          <span class="entry__title">QA Operations / Analyst</span>
+          <span class="entry__date">Jul 2024 – Present</span>
+        </div>
+        <div class="entry__sub">Commerce Acceptance Solutions (formerly Serino Systems Inc.)</div>
+        <ul>
+          <li>Conduct quality control tests and analysis to ensure software meets or exceeds standards and end-user requirements.</li>
+          <li>Draft, revise and approve test plans and scripts to align with standards and IT strategy.</li>
+          <li>Create test data files with valid and invalid records to test program logic and verify system flow; coordinate UAT, alpha and beta testing.</li>
+          <li>Complete process analysis, identify procedural and control deficiencies, and recommend and implement solutions.</li>
+          <li>Generate testing reports translated into concise summaries meaningful to management and the business.</li>
+          <li>Provide testing support to end users and clients across different locations.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry__head">
+          <span class="entry__title">Quality Assurance Engineer</span>
+          <span class="entry__date">Oct 2022 – Jun 2024</span>
+        </div>
+        <div class="entry__sub">Hybrain Development Corporation</div>
+        <ul>
+          <li>Conducted manual regression and integration testing.</li>
+          <li>Planned and created test cases; documented testing in Jira.</li>
+          <li>Worked within Agile/Scrum and Waterfall methodologies.</li>
+          <li>Responsible for creating release notes.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry__head">
+          <span class="entry__title">Client Success Associate</span>
+          <span class="entry__date">Mar 2021 – Jul 2022</span>
+        </div>
+        <div class="entry__sub">Hybrain Development Corporation</div>
+        <ul>
+          <li>Catered to client issues and requests, monitored via the Jira ticketing system.</li>
+          <li>Escalated tickets to upper levels and consulted with the team on complex cases.</li>
+          <li>Created end-of-shift / end-of-day reports logging all tickets raised.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Projects ===== -->
+  <div class="row">
+    <div class="label">Projects</div>
+    <div>
+      <div class="entry">
+        <div class="entry__title">Medtrix — Healthcare ERP (HIS &amp; LIS)</div>
+        <ul>
+          <li>Manual functional and regression testing; authored test plans and scripts against business requirements.</li>
+          <li>Provided technical/remote support, monitored issues in Jira, and produced analysis reports.</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <div class="entry__title">School Management &amp; Enrollment System</div>
+        <ul>
+          <li>Manual and automated functional/regression testing; handled client data-manipulation requests.</li>
+          <li>Built AI-assisted tools that improved team productivity and efficiency.</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <div class="entry__title">Ads Management System — Electron Desktop App</div>
+        <ul>
+          <li>Cross-platform tool syncing per-branch price-checker ad media from AWS S3; packaged as a Windows installer.</li>
+          <li>Replaced a manual, per-branch ad-update process.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Education ===== -->
+  <div class="row">
+    <div class="label">Education</div>
+    <div>
+      <div class="entry">
+        <div class="entry__head">
+          <span class="entry__title">Bachelor of Science in Engineering Technology</span>
+          <span class="entry__date">Nov 2019 – Sep 2020</span>
+        </div>
+        <div class="entry__sub">Technological University of the Philippines</div>
+      </div>
+      <div class="entry">
+        <div class="entry__head">
+          <span class="entry__title">Diploma in Computer Engineering Technology</span>
+          <span class="entry__date">Jun 2015 – Aug 2018</span>
+        </div>
+        <div class="entry__sub">Technological University of the Philippines</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Key Skills ===== -->
+  <div class="row">
+    <div class="label">Key Skills</div>
+    <div class="grid2">
+      <ul>
+        <li>Manual &amp; Automated Testing</li>
+        <li>Functional &amp; Regression Testing</li>
+        <li>API Testing &amp; Data Validation</li>
+        <li>Test Plans &amp; Test Scripts</li>
+        <li>Bug Triage &amp; Reporting</li>
+      </ul>
+      <ul>
+        <li>Desktop, Web &amp; Mobile Testing</li>
+        <li>Technical &amp; Remote Support</li>
+        <li>Escalation Handling</li>
+        <li>Problem-Solving &amp; Communication</li>
+        <li>AI-Assisted Tooling</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== Technical Skills ===== -->
+  <div class="row">
+    <div class="label">Technical Skills</div>
+    <div class="tech">
+      JavaScript · Node.js · MongoDB · MySQL · HTML &amp; CSS · Git &amp; GitHub · Cypress ·
+      Electron · AWS S3 · Jira · VS Code · Claude AI · Microsoft Office · Google Suite
+    </div>
+  </div>
+
+</body>
+</html>
