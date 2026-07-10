@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/testforge/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TestForge</title>
+    <script>
+      // Restores a deep link that the portfolio's root 404.html encoded as
+      // /testforge/?/runs/123 back into /testforge/runs/123, before React mounts.
+      // Paired with that shim; GitHub Pages cannot serve a real SPA fallback.
+      (function () {
+        var q = window.location.search;
+        if (q.charAt(1) === '/') {
+          var route = q.slice(2).split('&').map(function (part) {
+            return part.replace(/~and~/g, '&');
+          }).join('?');
+          window.history.replaceState(
+            null,
+            '',
+            window.location.pathname.replace(/\/$/, '') + '/' + route + window.location.hash
+          );
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/testforge/assets/index-rigCOIsn.js"></script>
+    <link rel="stylesheet" crossorigin href="/testforge/assets/index-GnJTlriQ.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

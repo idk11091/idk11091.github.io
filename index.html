@@ -332,6 +332,44 @@
             <span>JavaScript</span>
           </div>
         </article>
+        <article class="project-card reveal">
+          <div class="project-card__top">
+            <span class="project-card__icon" aria-hidden="true">🧪</span>
+            <div class="project-card__links">
+              <a href="/testforge/" rel="noopener">Open Portal ↗</a>
+            </div>
+          </div>
+          <h3>TestForge</h3>
+          <p>A TestRail-style test case management portal — projects, suites, test cases, execution runs with pass/fail history, plans, milestones, and reporting dashboards.</p>
+          <p>Built as a full-stack piece, then migrated to a serverless Firebase architecture so it runs as a pure client-side portal with no backend to maintain.</p>
+          <div class="project-card__work-grid">
+            <div class="project-card__work">
+              <h4>What I Built</h4>
+              <ul>
+                <li>Nested Project → Suite → Section → Test Case tree with full CRUD and CSV import/export.</li>
+                <li>Test run execution UI (pass/fail/blocked/retest) with append-only result history.</li>
+                <li>Role-based access control across Admin, Lead, Tester, and Viewer roles.</li>
+                <li>Reporting dashboard with per-run stacked status charts.</li>
+              </ul>
+            </div>
+            <div class="project-card__work">
+              <h4>Highlights</h4>
+              <ul>
+                <li>Runs snapshot case content, so editing a case never corrupts historical results.</li>
+                <li>Originally Node/Express/Prisma; migrated to Firestore with owner-scoped security rules.</li>
+                <li>Deployed alongside this portfolio as a live, authenticated web portal.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="project-card__tags">
+            <span>React</span>
+            <span>TypeScript</span>
+            <span>Firebase</span>
+            <span>Firestore</span>
+            <span>Vite</span>
+            <span>Tailwind CSS</span>
+          </div>
+        </article>
       </div>
     </section>
 

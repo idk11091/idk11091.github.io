@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page not found</title>
+    <script>
+      // GitHub Pages serves this file for every unknown path on the site.
+      //
+      // TestForge is a client-routed SPA at /testforge/, so a hard load of a deep
+      // link like /testforge/runs/123 has no matching file and lands here. Encode
+      // the route into a query string and bounce to /testforge/, where the app's
+      // index.html decodes it back (see testforge/index.html). Anything outside
+      // /testforge/ is a genuine 404 and falls through to the message below.
+      (function () {
+        var BASE = '/testforge';
+        var path = window.location.pathname;
+        if (path === BASE || path.indexOf(BASE + '/') === 0) {
+          var route = path.slice(BASE.length).replace(/^\//, '');
+          var search = window.location.search;
+          window.location.replace(
+            window.location.origin +
+              BASE +
+              '/?/' +
+              route +
+              (search ? '&' + search.slice(1).replace(/&/g, '~and~') : '') +
+              window.location.hash
+          );
+        }
+      })();
+    </script>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: #0f1720;
+        color: #e6edf3;
+        text-align: center;
+      }
+      a { color: #6ea8fe; }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>404 — page not found</h1>
+      <p><a href="/">Back to the portfolio</a></p>
+    </div>
+  </body>
+</html>
