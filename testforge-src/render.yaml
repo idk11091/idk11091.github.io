@@ -1,4 +1,5 @@
 # Render Blueprint for the TestForge API (backend only).
+# redeploy trigger: force Render to fetch the latest commit (node16 tsconfig fix)
 # The frontend is served separately from GitHub Pages; the database is Neon Postgres,
 # supplied via the DATABASE_URL env var below (not defined here).
 services:
