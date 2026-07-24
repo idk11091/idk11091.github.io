@@ -1,6 +1,7 @@
 import { signInWithEmailAndPassword, signOut, type AuthError } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { apiFetch, refreshSession } from '../lib/apiClient';
+import { getStoredRefreshToken, setStoredRefreshToken } from '../lib/tokenStore';
 import type { User } from './types';
 
 const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
@@ -35,11 +36,15 @@ export async function login(email: string, password: string): Promise<{ accessTo
     }
     throw err;
   }
-  return apiFetch<{ accessToken: string; user: User }>('/auth/firebase', {
+  const result = await apiFetch<{ accessToken: string; refreshToken?: string; user: User }>('/auth/firebase', {
     method: 'POST',
     body: { idToken },
     skipAuthRetry: true,
   });
+  // Persist the refresh token client-side so the session survives reloads across the
+  // frontend/API domain split (the httpOnly cookie is a blocked third-party cookie).
+  setStoredRefreshToken(result.refreshToken ?? null);
+  return { accessToken: result.accessToken, user: result.user };
 }
 
 export async function refresh(): Promise<{ accessToken: string; user: User }> {
@@ -51,8 +56,14 @@ export async function refresh(): Promise<{ accessToken: string; user: User }> {
 }
 
 export async function logout() {
-  // End both sessions: the TestForge session (server-side) and the Firebase session.
-  await apiFetch<void>('/auth/logout', { method: 'POST', skipAuthRetry: true }).catch(() => undefined);
+  // End both sessions: the TestForge session (server-side) and the Firebase session. Send the
+  // stored refresh token so the server can revoke that token family, then drop it locally.
+  await apiFetch<void>('/auth/logout', {
+    method: 'POST',
+    body: { refreshToken: getStoredRefreshToken() },
+    skipAuthRetry: true,
+  }).catch(() => undefined);
+  setStoredRefreshToken(null);
   await signOut(auth).catch(() => undefined);
 }
 

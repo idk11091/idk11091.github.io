@@ -60,7 +60,11 @@ async function issueNewFamily(user: User, res: Response, ip: string | undefined)
     },
   });
   setRefreshCookie(res, rawToken);
-  return { accessToken: signAccessToken({ sub: user.id, role: user.role as Role }) };
+  // The raw refresh token is ALSO returned in the body (not only the httpOnly cookie): the
+  // GitHub Pages frontend and Render API are on different domains, so the refresh cookie is a
+  // third-party cookie that browsers block/evict — the client persists this body token itself
+  // and sends it back on /auth/refresh. The cookie is kept for same-site local dev.
+  return { accessToken: signAccessToken({ sub: user.id, role: user.role as Role }), refreshToken: rawToken };
 }
 
 export async function login(email: string, password: string, res: Response, ip: string | undefined) {
@@ -169,7 +173,9 @@ export async function refresh(rawToken: string | undefined, res: Response, ip: s
   }
 
   setRefreshCookie(res, rawNewToken);
-  return { accessToken: signAccessToken({ sub: user.id, role: user.role as Role }), user };
+  // Return the rotated raw token in the body too (see issueNewFamily) so the cross-domain
+  // client can persist the new token and drop the old one.
+  return { accessToken: signAccessToken({ sub: user.id, role: user.role as Role }), refreshToken: rawNewToken, user };
 }
 
 export async function logout(rawToken: string | undefined, res: Response) {

@@ -1,4 +1,10 @@
-import { getAccessToken, notifySessionExpired, setAccessToken } from './tokenStore';
+import {
+  getAccessToken,
+  getStoredRefreshToken,
+  notifySessionExpired,
+  setAccessToken,
+  setStoredRefreshToken,
+} from './tokenStore';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
@@ -21,16 +27,33 @@ let refreshInFlight: Promise<RefreshResult | null> | null = null;
 
 export interface RefreshResult {
   accessToken: string;
+  refreshToken?: string;
   user: unknown;
 }
 
 export function refreshSession(): Promise<RefreshResult | null> {
   if (!refreshInFlight) {
-    refreshInFlight = fetch(`${BASE_URL}/auth/refresh`, { method: 'POST', credentials: 'include' })
+    // Send the persisted refresh token in the body (cross-domain: the httpOnly cookie is a
+    // blocked third-party cookie). credentials:'include' is kept so same-site local dev can
+    // still fall back to the cookie when no token is stored yet.
+    const stored = getStoredRefreshToken();
+    refreshInFlight = fetch(`${BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: stored }),
+    })
       .then(async (res) => {
-        if (!res.ok) return null;
+        if (!res.ok) {
+          // Only a 401 means the token itself is dead (expired / rotated / revoked) — drop it
+          // so we stop replaying it. A 5xx / cold-start failure is transient: keep the token so
+          // a later attempt (once Render's free instance wakes) can still restore the session.
+          if (res.status === 401) setStoredRefreshToken(null);
+          return null;
+        }
         const data = (await res.json()) as RefreshResult;
         setAccessToken(data.accessToken);
+        if (data.refreshToken) setStoredRefreshToken(data.refreshToken);
         return data;
       })
       .catch(() => null)

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import * as authApi from '../../api/auth';
 import type { User } from '../../api/types';
-import { setAccessToken, setSessionExpiredHandler } from '../../lib/tokenStore';
+import { setAccessToken, setSessionExpiredHandler, setStoredRefreshToken } from '../../lib/tokenStore';
 
 interface AuthContextValue {
   user: User | null;
@@ -18,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearSession = useCallback(() => {
     setAccessToken(null);
+    setStoredRefreshToken(null);
     setUser(null);
     setStatus('unauthenticated');
   }, []);
