@@ -6,6 +6,7 @@ import { DUMMY_PASSWORD_HASH, verifyPassword } from '../../lib/password';
 import { signAccessToken } from '../../lib/jwt';
 import { generateOpaqueToken, hashToken } from '../../lib/tokens';
 import { UnauthorizedError } from '../../lib/errors';
+import { verifyFirebaseIdToken } from '../../lib/firebaseAuth';
 import type { Role } from '../../types/roles';
 import type { User } from '@prisma/client';
 
@@ -73,6 +74,36 @@ export async function login(email: string, password: string, res: Response, ip: 
   if (!user || !user.isActive || !valid) {
     throw new UnauthorizedError('Invalid email or password');
   }
+  const tokens = await issueNewFamily(user, res, ip);
+  return { user, ...tokens };
+}
+
+// Sign in with a Firebase ID token (same Firebase account as the portfolio journal). The
+// token is verified against Google's public keys (no password reaches this server), then the
+// matching TestForge user is found-or-created by email and issued the app's normal session —
+// so everything after login behaves identically to a password login. A newly-seen Firebase
+// user is created as ADMIN: the shared Firebase project has no public signup (only the owner
+// can authenticate), so any Firebase login is the owner. The stored passwordHash is the
+// unusable DUMMY hash — these accounts never authenticate by password, and the constant-time
+// password path must never accidentally match one.
+export async function loginWithFirebase(idToken: string, res: Response, ip: string | undefined) {
+  const identity = await verifyFirebaseIdToken(idToken);
+  const existing = await prisma.user.findUnique({ where: { email: identity.email } });
+
+  let user = existing;
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email: identity.email,
+        name: identity.name || identity.email.split('@')[0],
+        role: 'ADMIN',
+        isActive: true,
+        passwordHash: DUMMY_PASSWORD_HASH,
+      },
+    });
+  }
+  if (!user.isActive) throw new UnauthorizedError('Account is inactive');
+
   const tokens = await issueNewFamily(user, res, ip);
   return { user, ...tokens };
 }

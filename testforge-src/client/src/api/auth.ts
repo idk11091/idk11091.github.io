@@ -1,10 +1,43 @@
+import { signInWithEmailAndPassword, signOut, type AuthError } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import { apiFetch, refreshSession } from '../lib/apiClient';
 import type { User } from './types';
 
-export function login(email: string, password: string) {
-  return apiFetch<{ accessToken: string; user: User }>('/auth/login', {
+const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
+  'auth/invalid-email': "That email address doesn't look right.",
+  'auth/missing-password': 'Please enter your password.',
+  'auth/invalid-credential': 'Email or password is incorrect.',
+  'auth/wrong-password': 'Email or password is incorrect.',
+  'auth/user-not-found': 'Email or password is incorrect.',
+  'auth/user-disabled': 'This account has been disabled.',
+  'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+  'auth/network-request-failed': 'Network error — check your connection.',
+};
+
+function isFirebaseError(err: unknown): err is AuthError {
+  return typeof err === 'object' && err !== null && 'code' in err && typeof (err as AuthError).code === 'string';
+}
+
+/**
+ * Login now goes through Firebase Auth (the SAME account as the portfolio journal): the
+ * email/password is verified by Firebase, and the resulting ID token is exchanged for a
+ * TestForge session at POST /auth/firebase. The password never reaches TestForge's own
+ * server. Everything after login (apiFetch, silent refresh) is unchanged.
+ */
+export async function login(email: string, password: string): Promise<{ accessToken: string; user: User }> {
+  let idToken: string;
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+    idToken = await cred.user.getIdToken();
+  } catch (err) {
+    if (isFirebaseError(err)) {
+      throw new Error(FIREBASE_ERROR_MESSAGES[err.code] ?? "Couldn't sign in. Please try again.");
+    }
+    throw err;
+  }
+  return apiFetch<{ accessToken: string; user: User }>('/auth/firebase', {
     method: 'POST',
-    body: { email, password },
+    body: { idToken },
     skipAuthRetry: true,
   });
 }
@@ -17,8 +50,10 @@ export async function refresh(): Promise<{ accessToken: string; user: User }> {
   return result as { accessToken: string; user: User };
 }
 
-export function logout() {
-  return apiFetch<void>('/auth/logout', { method: 'POST', skipAuthRetry: true });
+export async function logout() {
+  // End both sessions: the TestForge session (server-side) and the Firebase session.
+  await apiFetch<void>('/auth/logout', { method: 'POST', skipAuthRetry: true }).catch(() => undefined);
+  await signOut(auth).catch(() => undefined);
 }
 
 export function me() {

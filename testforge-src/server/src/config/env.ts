@@ -43,4 +43,7 @@ export const env = {
   cookieSecure: process.env.COOKIE_SECURE !== undefined ? process.env.COOKIE_SECURE === 'true' : isProduction,
   seedAdminEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@testforge.local',
   seedAdminPassword: process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!',
+  // Firebase project whose Auth accounts can sign in (same project as the portfolio journal,
+  // so one login works across both). Public identifier, not a secret — safe to default here.
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID ?? 'myportfolio-c9cac',
 };

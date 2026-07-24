@@ -24,6 +24,17 @@ authRouter.post(
 );
 
 authRouter.post(
+  '/firebase',
+  loginRateLimiter,
+  asyncHandler(async (req, res) => {
+    const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken : '';
+    if (!idToken) throw new UnauthorizedError('Missing Firebase token');
+    const { user, accessToken } = await authService.loginWithFirebase(idToken, res, req.ip);
+    res.json({ accessToken, user: toPublicUser(user) });
+  }),
+);
+
+authRouter.post(
   '/refresh',
   asyncHandler(async (req, res) => {
     const rawToken = authService.getRefreshCookie(req.cookies);
