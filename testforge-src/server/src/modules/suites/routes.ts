@@ -60,7 +60,7 @@ suitesRouter.get(
     if (!suite) throw new NotFoundError('Suite');
 
     const [caseCount, activeRunCount, closedRunCount] = await Promise.all([
-      prisma.testCase.count({ where: { suiteId: suite.id, isDeleted: false } }),
+      prisma.testCase.count({ where: { suiteId: suite.id } }),
       prisma.testRun.count({ where: { suiteId: suite.id, isCompleted: false } }),
       prisma.testRun.count({ where: { suiteId: suite.id, isCompleted: true } }),
     ]);

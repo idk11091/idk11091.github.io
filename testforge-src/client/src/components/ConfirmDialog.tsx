@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   message: ReactNode;
   confirmLabel?: string;
   confirming?: boolean;
+  confirmDisabled?: boolean;
   danger?: boolean;
 }
 
@@ -21,6 +22,7 @@ export function ConfirmDialog({
   message,
   confirmLabel = 'Confirm',
   confirming = false,
+  confirmDisabled = false,
   danger = true,
 }: ConfirmDialogProps) {
   return (
@@ -33,7 +35,7 @@ export function ConfirmDialog({
           <Button variant="secondary" onClick={onClose} disabled={confirming}>
             Cancel
           </Button>
-          <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} disabled={confirming}>
+          <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} disabled={confirming || confirmDisabled}>
             {confirming ? 'Working…' : confirmLabel}
           </Button>
         </>
