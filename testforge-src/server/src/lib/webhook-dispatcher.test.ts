@@ -1,12 +1,7 @@
 import { formatDeliveryError } from './webhook-dispatcher';
 
-// Regression tests: fetch (undici) wraps every network failure in a generic "fetch failed"
-// TypeError -- the real cause (DNS lookup failure vs. connection refused vs. anything else) lives
-// one level down in err.cause, which an earlier version of this code discarded, logging the
-// identical "fetch failed" for both. Tested here against synthetic errors shaped exactly like
-// Node's real ones (code + message on the cause), rather than through a live DNS lookup, since
-// real DNS resolution timing for a deliberately-nonexistent host varies too much across
-// environments to be a reliable regression test on its own.
+// Preserve transport error causes when a request wrapper supplies both an outer message and a
+// more specific cause. Test synthetic errors so the formatting check does not depend on live DNS.
 describe('formatDeliveryError', () => {
   it('surfaces a DNS-failure cause distinctly from a connection-refused cause', () => {
     const dnsErr = new TypeError('fetch failed');

@@ -8,8 +8,8 @@ services:
     runtime: node
     plan: free
     # npm-workspaces monorepo: install/build from the repo root, target `server`.
-    # `prisma db push` (not migrate deploy) because the DB was created by a push and has
-    # no Prisma migration history; push is idempotent and won't drop data (no --accept-data-loss).
+    # `prisma db push` (not migrate deploy) because the existing Neon DB was created by a push
+    # and has no Prisma migration history. Local development uses the PostgreSQL migration baseline.
     # --include=dev: NODE_ENV=production makes npm skip devDependencies, but the build
     # needs them (typescript + all @types/* live in devDependencies). This flag forces
     # them in for the build step; runtime still runs as production.

@@ -34,6 +34,7 @@ async function getCerts(): Promise<Record<string, string>> {
 export interface FirebaseIdentity {
   uid: string;
   email: string;
+  emailVerified: boolean;
   name?: string;
 }
 
@@ -62,6 +63,12 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<FirebaseId
 
   const email = typeof payload.email === 'string' ? payload.email.toLowerCase() : '';
   if (!email) throw new UnauthorizedError('Firebase token has no email');
+  if (payload.email_verified !== true) throw new UnauthorizedError('Firebase email must be verified');
   // `sub` is the Firebase UID.
-  return { uid: String(payload.sub), email, name: typeof payload.name === 'string' ? payload.name : undefined };
+  return {
+    uid: String(payload.sub),
+    email,
+    emailVerified: true,
+    name: typeof payload.name === 'string' ? payload.name : undefined,
+  };
 }

@@ -96,6 +96,7 @@ export interface TestCase {
   bddLines: BddLine[] | null;
   priority: Priority;
   type: CaseType;
+  orderIndex: number;
   estimate: string | null;
   referenceLink: string | null;
   isDeleted: boolean;

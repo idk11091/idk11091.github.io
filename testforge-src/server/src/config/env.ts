@@ -27,7 +27,7 @@ function requiredSecret(name: string, devOnlyFallback: string): string {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 4000),
-  databaseUrl: required('DATABASE_URL', 'file:./prisma/dev.db'),
+  databaseUrl: required('DATABASE_URL'),
   jwtAccessSecret: requiredSecret('JWT_ACCESS_SECRET', 'dev-only-insecure-secret'),
   jwtAccessTtl: process.env.JWT_ACCESS_TTL ?? '15m',
   refreshTokenTtlDays: Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 7),
@@ -46,4 +46,6 @@ export const env = {
   // Firebase project whose Auth accounts can sign in (same project as the portfolio journal,
   // so one login works across both). Public identifier, not a secret — safe to default here.
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID ?? 'myportfolio-c9cac',
+  // Verified Firebase identities permitted to bootstrap a missing initial admin user row.
+  // Existing account access and roles are controlled by PostgreSQL.
 };

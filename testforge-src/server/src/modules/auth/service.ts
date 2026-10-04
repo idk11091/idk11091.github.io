@@ -17,10 +17,8 @@ function refreshExpiry(): Date {
   return new Date(Date.now() + env.refreshTokenTtlDays * 24 * 60 * 60 * 1000);
 }
 
-// Frontend (GitHub Pages) and API (Render) are on different domains, so the refresh
-// cookie is cross-site: browsers only send it with SameSite=None, which itself requires
-// Secure. Locally both run on localhost (same-site), where 'lax' is right and 'none' would
-// be rejected over plain HTTP. cookieSecure is already true in prod, false in dev.
+// Production frontend and API are cross-site. Partitioned cookies allow the HttpOnly refresh
+// cookie to work there without exposing the token to JavaScript. Locally both run on localhost.
 const REFRESH_COOKIE_SAMESITE = env.cookieSecure ? 'none' : 'lax';
 
 function setRefreshCookie(res: Response, rawToken: string) {
@@ -28,6 +26,7 @@ function setRefreshCookie(res: Response, rawToken: string) {
     httpOnly: true,
     secure: env.cookieSecure,
     sameSite: REFRESH_COOKIE_SAMESITE,
+    ...(env.cookieSecure ? { partitioned: true } : {}),
     path: REFRESH_COOKIE_PATH,
     maxAge: env.refreshTokenTtlDays * 24 * 60 * 60 * 1000,
   });
@@ -40,6 +39,7 @@ export function clearRefreshCookie(res: Response) {
     httpOnly: true,
     secure: env.cookieSecure,
     sameSite: REFRESH_COOKIE_SAMESITE,
+    ...(env.cookieSecure ? { partitioned: true } : {}),
   });
 }
 
@@ -60,11 +60,7 @@ async function issueNewFamily(user: User, res: Response, ip: string | undefined)
     },
   });
   setRefreshCookie(res, rawToken);
-  // The raw refresh token is ALSO returned in the body (not only the httpOnly cookie): the
-  // GitHub Pages frontend and Render API are on different domains, so the refresh cookie is a
-  // third-party cookie that browsers block/evict — the client persists this body token itself
-  // and sends it back on /auth/refresh. The cookie is kept for same-site local dev.
-  return { accessToken: signAccessToken({ sub: user.id, role: user.role as Role }), refreshToken: rawToken };
+  return { accessToken: signAccessToken({ sub: user.id, role: user.role as Role }) };
 }
 
 export async function login(email: string, password: string, res: Response, ip: string | undefined) {
@@ -82,30 +78,13 @@ export async function login(email: string, password: string, res: Response, ip: 
   return { user, ...tokens };
 }
 
-// Sign in with a Firebase ID token (same Firebase account as the portfolio journal). The
-// token is verified against Google's public keys (no password reaches this server), then the
-// matching TestForge user is found-or-created by email and issued the app's normal session —
-// so everything after login behaves identically to a password login. A newly-seen Firebase
-// user is created as ADMIN: the shared Firebase project has no public signup (only the owner
-// can authenticate), so any Firebase login is the owner. The stored passwordHash is the
-// unusable DUMMY hash — these accounts never authenticate by password, and the constant-time
-// password path must never accidentally match one.
+// Sign in with a verified Firebase identity. PostgreSQL is the source of truth for users,
+// roles, and account status. Firebase project membership alone grants no TestForge access.
+// The stored passwordHash is unusable for password login.
 export async function loginWithFirebase(idToken: string, res: Response, ip: string | undefined) {
   const identity = await verifyFirebaseIdToken(idToken);
-  const existing = await prisma.user.findUnique({ where: { email: identity.email } });
-
-  let user = existing;
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email: identity.email,
-        name: identity.name || identity.email.split('@')[0],
-        role: 'ADMIN',
-        isActive: true,
-        passwordHash: DUMMY_PASSWORD_HASH,
-      },
-    });
-  }
+  const user = await prisma.user.findUnique({ where: { email: identity.email } });
+  if (!user) throw new UnauthorizedError('This Firebase account is not authorized for TestForge');
   if (!user.isActive) throw new UnauthorizedError('Account is inactive');
 
   const tokens = await issueNewFamily(user, res, ip);
@@ -173,9 +152,7 @@ export async function refresh(rawToken: string | undefined, res: Response, ip: s
   }
 
   setRefreshCookie(res, rawNewToken);
-  // Return the rotated raw token in the body too (see issueNewFamily) so the cross-domain
-  // client can persist the new token and drop the old one.
-  return { accessToken: signAccessToken({ sub: user.id, role: user.role as Role }), refreshToken: rawNewToken, user };
+  return { accessToken: signAccessToken({ sub: user.id, role: user.role as Role }), user };
 }
 
 export async function logout(rawToken: string | undefined, res: Response) {

@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { GripVertical, Pencil, Trash2 } from 'lucide-react';
-import { DndContext, DragOverlay, PointerSensor, useDraggable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import { ChevronDown, ChevronRight, GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import * as suitesApi from '../../api/suites';
 import * as casesApi from '../../api/cases';
 import type { CaseFilter, CaseInput } from '../../api/cases';
@@ -47,23 +49,63 @@ function buildIndentedSections(sections: Section[]): Array<Section & { depth: nu
   return result;
 }
 
+function collectSectionSubtreeIds(sectionId: string | null, sections: Section[]): string[] {
+  if (!sectionId) return [];
+  const childrenByParent = new Map<string | null, Section[]>();
+  for (const section of sections) {
+    childrenByParent.set(section.parentId, [...(childrenByParent.get(section.parentId) ?? []), section]);
+  }
+  for (const siblings of childrenByParent.values()) siblings.sort((a, b) => a.orderIndex - b.orderIndex);
+  const ids: string[] = [];
+  function walk(id: string) {
+    ids.push(id);
+    for (const child of childrenByParent.get(id) ?? []) walk(child.id);
+  }
+  walk(sectionId);
+  return ids;
+}
+
 // A dedicated drag handle (rather than making the whole row draggable) so it doesn't fight
-// with the row's own click-to-expand button or checkbox — useDraggable must be called from a
+// with the row's own click-to-expand button or checkbox — useSortable must be called from a
 // component of its own since case rows are rendered via .map(), and hooks can't be called
 // conditionally/in a loop within the parent's render function.
-function CaseDragHandle({ caseId, disabled }: { caseId: string; disabled: boolean }) {
-  const { attributes, listeners, setNodeRef } = useDraggable({ id: `case:${caseId}`, disabled });
-  if (disabled) return <span className="mr-1 w-3.5 shrink-0" />;
-  return (
+function SortableCaseRow({
+  caseId,
+  disabled,
+  leftPadding,
+  children,
+}: {
+  caseId: string;
+  disabled: boolean;
+  leftPadding: number;
+  children: (dragHandle: ReactNode) => ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: `case:${caseId}`,
+    disabled,
+  });
+  const dragHandle = disabled ? (
+    <span className="mr-1 w-3.5 shrink-0" />
+  ) : (
     <button
-      ref={setNodeRef}
+      ref={setActivatorNodeRef}
       {...attributes}
       {...listeners}
-      aria-label="Drag to move"
+      aria-label="Drag to reorder or move"
       className="mr-1 shrink-0 cursor-grab touch-none text-slate-300 hover:text-slate-500 active:cursor-grabbing dark:text-slate-600 dark:hover:text-slate-400"
     >
       <GripVertical className="h-3.5 w-3.5" />
     </button>
+  );
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="p-3"
+      style={{ paddingLeft: `${leftPadding}px`, transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : undefined }}
+    >
+      {children(dragHandle)}
+    </div>
   );
 }
 
@@ -82,7 +124,7 @@ export function SuiteDetailPage() {
   const [sectionParentId, setSectionParentId] = useState('');
   const [showCaseForm, setShowCaseForm] = useState(false);
   const [editingCase, setEditingCase] = useState<TestCase | null>(null);
-  const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
+  const [expandedCaseIds, setExpandedCaseIds] = useState<Set<string>>(() => new Set());
   const [formError, setFormError] = useState<string | null>(null);
   const [csvMessage, setCsvMessage] = useState<string | null>(null);
   const [showSharedStepsManager, setShowSharedStepsManager] = useState(false);
@@ -90,6 +132,7 @@ export function SuiteDetailPage() {
   const [historyCase, setHistoryCase] = useState<TestCase | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const featureFileInputRef = useRef<HTMLInputElement>(null);
+  const caseFormRef = useRef<HTMLDivElement>(null);
 
   const [editingSuiteName, setEditingSuiteName] = useState<string | null>(null);
   const [suiteDeleteOpen, setSuiteDeleteOpen] = useState(false);
@@ -127,16 +170,39 @@ export function SuiteDetailPage() {
     () => (suiteQuery.data ? buildIndentedSections(suiteQuery.data.suite.sections) : []),
     [suiteQuery.data],
   );
-  const sectionNameById = useMemo(() => new Map(sections.map((s) => [s.id, s.name])), [sections]);
+  const sectionDepthById = useMemo(() => new Map(sections.map((section) => [section.id, section.depth])), [sections]);
+  const sectionPathById = useMemo(() => {
+    const sectionById = new Map(sections.map((section) => [section.id, section]));
+    return new Map(sections.map((section) => {
+      const path = [section.name];
+      let parentId = section.parentId;
+      while (parentId) {
+        const parent = sectionById.get(parentId);
+        if (!parent) break;
+        path.unshift(parent.name);
+        parentId = parent.parentId;
+      }
+      return [section.id, path.join(' / ')];
+    }));
+  }, [sections]);
   const filtering = isFilterActive(caseFilter);
 
   const activeSectionId = selectedSectionId ?? sections[0]?.id ?? null;
+  const activeSectionIds = useMemo(
+    () => collectSectionSubtreeIds(activeSectionId, suiteQuery.data?.suite.sections ?? []),
+    [activeSectionId, suiteQuery.data?.suite.sections],
+  );
 
-  const sectionCasesQuery = useQuery({
-    queryKey: ['sections', activeSectionId, 'cases', showDeleted, caseFilter.sortBy, caseFilter.sortDir],
-    queryFn: () =>
-      casesApi.listCasesBySection(activeSectionId!, { deleted: showDeleted, sortBy: caseFilter.sortBy, sortDir: caseFilter.sortDir }),
-    enabled: !!activeSectionId && !filtering,
+  // Selecting a parent section shows its own cases and every descendant section's cases.
+  const sectionTreeCasesQuery = useQuery({
+    queryKey: ['suites', suiteId, 'cases', 'section-tree', activeSectionIds, showDeleted, caseFilter.sortBy, caseFilter.sortDir],
+    queryFn: () => casesApi.listCasesBySuite(suiteId!, {
+      sectionIds: activeSectionIds,
+      deleted: showDeleted,
+      sortBy: caseFilter.sortBy,
+      sortDir: caseFilter.sortDir,
+    }),
+    enabled: !!suiteId && activeSectionIds.length > 0 && !filtering,
   });
 
   const filteredCasesQuery = useQuery({
@@ -145,14 +211,35 @@ export function SuiteDetailPage() {
     enabled: !!suiteId && filtering,
   });
 
-  const casesQuery = filtering ? filteredCasesQuery : sectionCasesQuery;
+  const casesQuery = filtering ? filteredCasesQuery : sectionTreeCasesQuery;
+  const visibleCases = useMemo(() => {
+    const result = casesQuery.data?.cases ?? [];
+    if (filtering || activeSectionIds.length < 2 || (caseFilter.sortBy && caseFilter.sortBy !== 'orderIndex')) return result;
+    const sectionRank = new Map(activeSectionIds.map((id, index) => [id, index]));
+    const direction = caseFilter.sortDir === 'desc' ? -1 : 1;
+    return [...result].sort((a, b) => {
+      const sectionDifference = (sectionRank.get(a.sectionId ?? '') ?? Number.MAX_SAFE_INTEGER)
+        - (sectionRank.get(b.sectionId ?? '') ?? Number.MAX_SAFE_INTEGER);
+      return sectionDifference || (a.orderIndex - b.orderIndex) * direction;
+    });
+  }, [casesQuery.data?.cases, filtering, activeSectionIds, caseFilter.sortBy, caseFilter.sortDir]);
 
   // Clear any bulk-selection whenever the visible case list changes to a different set —
   // otherwise a stale selection from a previous section/filter view could get bulk-edited
   // without those cases even being on screen anymore.
   useEffect(() => {
     setSelectedCaseIds(new Set());
+    setExpandedCaseIds(new Set());
   }, [activeSectionId, filtering, showDeleted]);
+
+  useEffect(() => {
+    if (showCaseForm) caseFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [showCaseForm]);
+
+  function invalidateCaseLists() {
+    queryClient.invalidateQueries({ queryKey: ['suites', suiteId, 'cases'] });
+    queryClient.invalidateQueries({ queryKey: ['sections'] });
+  }
 
   const createSection = useMutation({
     mutationFn: () =>
@@ -222,6 +309,15 @@ export function SuiteDetailPage() {
     onError: (err) => showToast(err instanceof ApiError ? err.message : 'Failed to move test case(s)', 'error'),
   });
 
+  const reorderCaseMutation = useMutation({
+    mutationFn: ({ caseId, targetIndex }: { caseId: string; targetIndex: number }) => casesApi.reorderCase(caseId, targetIndex),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suites', suiteId, 'cases'] }),
+    onError: (err) => {
+      showToast(err instanceof ApiError ? err.message : 'Failed to reorder test case', 'error');
+      queryClient.invalidateQueries({ queryKey: ['suites', suiteId, 'cases'] });
+    },
+  });
+
   const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [draggingCaseId, setDraggingCaseId] = useState<string | null>(null);
 
@@ -239,6 +335,19 @@ export function SuiteDetailPage() {
 
     if (activeId.startsWith('case:')) {
       const draggedCaseId = activeId.slice('case:'.length);
+      if (overId.startsWith('case:')) {
+        const targetCaseId = overId.slice('case:'.length);
+        if (draggedCaseId === targetCaseId) return;
+        const draggedCase = visibleCases.find((testCase) => testCase.id === draggedCaseId);
+        const targetCase = visibleCases.find((testCase) => testCase.id === targetCaseId);
+        if (!draggedCase || !targetCase || draggedCase.sectionId !== targetCase.sectionId || !draggedCase.sectionId) return;
+        const siblings = visibleCases
+          .filter((testCase) => testCase.sectionId === draggedCase.sectionId)
+          .sort((a, b) => a.orderIndex - b.orderIndex);
+        const targetIndex = siblings.findIndex((testCase) => testCase.id === targetCaseId);
+        reorderCaseMutation.mutate({ caseId: draggedCaseId, targetIndex });
+        return;
+      }
       // If the dragged case is part of the current multi-select, move the whole selection
       // together; otherwise just the one case being dragged.
       const caseIds = selectedCaseIds.has(draggedCaseId) ? [...selectedCaseIds] : [draggedCaseId];
@@ -281,7 +390,7 @@ export function SuiteDetailPage() {
     onSuccess: () => {
       setShowCaseForm(false);
       setFormError(null);
-      queryClient.invalidateQueries({ queryKey: ['sections', activeSectionId, 'cases'] });
+      invalidateCaseLists();
     },
     onError: (err) => setFormError(err instanceof ApiError ? err.message : 'Failed to create case'),
   });
@@ -291,20 +400,20 @@ export function SuiteDetailPage() {
     onSuccess: () => {
       setEditingCase(null);
       setFormError(null);
-      queryClient.invalidateQueries({ queryKey: ['sections', activeSectionId, 'cases'] });
+      invalidateCaseLists();
     },
     onError: (err) => setFormError(err instanceof ApiError ? err.message : 'Failed to update case'),
   });
 
   const deleteCaseMutation = useMutation({
     mutationFn: (id: string) => casesApi.deleteCase(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sections', activeSectionId, 'cases'] }),
+    onSuccess: invalidateCaseLists,
   });
 
   const restoreCaseMutation = useMutation({
     mutationFn: (id: string) => casesApi.restoreCase(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sections', activeSectionId, 'cases'] });
+      invalidateCaseLists();
       showToast('Test case restored.');
     },
     onError: (err) => showToast(err instanceof ApiError ? err.message : 'Failed to restore case', 'error'),
@@ -314,7 +423,7 @@ export function SuiteDetailPage() {
     mutationFn: () => casesApi.bulkRestoreCases([...selectedCaseIds]),
     onSuccess: (data) => {
       setSelectedCaseIds(new Set());
-      queryClient.invalidateQueries({ queryKey: ['sections', activeSectionId, 'cases'] });
+      invalidateCaseLists();
       showToast(`Restored ${data.restored} test case(s).`);
     },
     onError: (err) => showToast(err instanceof ApiError ? err.message : 'Failed to restore cases', 'error'),
@@ -324,7 +433,7 @@ export function SuiteDetailPage() {
     mutationFn: (id: string) => casesApi.permanentlyDeleteCase(id),
     onSuccess: () => {
       setPermanentDeleteTarget(null);
-      queryClient.invalidateQueries({ queryKey: ['sections', activeSectionId, 'cases'] });
+      invalidateCaseLists();
       showToast('Test case permanently deleted.');
     },
     onError: (err) => showToast(err instanceof ApiError ? err.message : 'Failed to permanently delete case', 'error'),
@@ -335,7 +444,7 @@ export function SuiteDetailPage() {
     onSuccess: (data) => {
       setCsvMessage(`Imported ${data.imported} case${data.imported === 1 ? '' : 's'}.`);
       queryClient.invalidateQueries({ queryKey: ['suites', suiteId] });
-      queryClient.invalidateQueries({ queryKey: ['sections', activeSectionId, 'cases'] });
+      invalidateCaseLists();
     },
     onError: (err) => setCsvMessage(err instanceof ApiError ? err.message : 'Failed to import CSV'),
   });
@@ -345,7 +454,7 @@ export function SuiteDetailPage() {
     onSuccess: (data) => {
       setCsvMessage(`Imported ${data.imported} scenario${data.imported === 1 ? '' : 's'} into "${data.sectionName}".`);
       queryClient.invalidateQueries({ queryKey: ['suites', suiteId] });
-      queryClient.invalidateQueries({ queryKey: ['sections', activeSectionId, 'cases'] });
+      invalidateCaseLists();
     },
     onError: (err) => setCsvMessage(err instanceof ApiError ? err.message : 'Failed to import .feature file'),
   });
@@ -554,6 +663,24 @@ export function SuiteDetailPage() {
                   {filtering ? 'All test cases (filtered)' : sections.find((s) => s.id === activeSectionId)?.name}
                 </h2>
                 <div className="no-print flex items-center gap-3">
+                  {visibleCases.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        onClick={() => setExpandedCaseIds(new Set(visibleCases.map((testCase) => testCase.id)))}
+                      >
+                        Expand all
+                      </button>
+                      <button
+                        type="button"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        onClick={() => setExpandedCaseIds(new Set())}
+                      >
+                        Collapse all
+                      </button>
+                    </>
+                  )}
                   {canManageStructure && (
                     <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                       <input
@@ -595,18 +722,6 @@ export function SuiteDetailPage() {
 
               {formError && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{formError}</p>}
 
-              {showCaseForm && !showDeleted && !filtering && (
-                <div className="mb-4">
-                  <CaseForm
-                    availableLabels={labels}
-                    availableSharedStepSets={sharedStepSets}
-                    submitting={createCase.isPending}
-                    onSubmit={(input) => createCase.mutate(input)}
-                    onCancel={() => setShowCaseForm(false)}
-                  />
-                </div>
-              )}
-
               {showDeleted && selectedCaseIds.size > 0 && (
                 <div className="mb-3 flex items-center gap-3 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-2">
                   <span className="text-xs text-slate-600 dark:text-slate-400">{selectedCaseIds.size} selected</span>
@@ -631,11 +746,27 @@ export function SuiteDetailPage() {
                 />
               )}
 
+              <SortableContext
+                items={visibleCases.map((testCase) => `case:${testCase.id}`)}
+                strategy={verticalListSortingStrategy}
+              >
               <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                {casesQuery.data?.cases.map((testCase) => (
-                  <div key={testCase.id} className="p-3">
+                {visibleCases.map((testCase) => {
+                  const sectionDepth = sectionDepthById.get(testCase.sectionId ?? '') ?? 0;
+                  const activeSectionDepth = sectionDepthById.get(activeSectionId ?? '') ?? 0;
+                  const indentLevel = filtering ? sectionDepth : Math.max(0, sectionDepth - activeSectionDepth);
+                  const leftPadding = 12 + Math.min(indentLevel, 4) * 14;
+                  const isCustomSort = !!caseFilter.sortBy && caseFilter.sortBy !== 'orderIndex';
+                  return (
+                    <SortableCaseRow
+                      key={testCase.id}
+                      caseId={testCase.id}
+                      disabled={!canWriteCases || showDeleted || filtering || isCustomSort}
+                      leftPadding={leftPadding}
+                    >
+                    {(dragHandle) => <>
                     <div className="flex items-center justify-between">
-                      {canWriteCases && <CaseDragHandle caseId={testCase.id} disabled={showDeleted} />}
+                      {canWriteCases && dragHandle}
                       {canWriteCases && (
                         <input
                           type="checkbox"
@@ -653,14 +784,23 @@ export function SuiteDetailPage() {
                       )}
                       <button
                         className="flex-1 text-left"
-                        onClick={() => setExpandedCaseId(expandedCaseId === testCase.id ? null : testCase.id)}
+                        aria-expanded={expandedCaseIds.has(testCase.id)}
+                        onClick={() => setExpandedCaseIds((previous) => {
+                          const next = new Set(previous);
+                          if (next.has(testCase.id)) next.delete(testCase.id);
+                          else next.add(testCase.id);
+                          return next;
+                        })}
                       >
                         <div className="flex items-center gap-2">
+                          {expandedCaseIds.has(testCase.id)
+                            ? <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
+                            : <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />}
                           <PriorityBadge priority={testCase.priority} />
                           <Badge>{testCase.type}</Badge>
-                          {filtering && testCase.sectionId && (
+                          {(filtering || testCase.sectionId !== activeSectionId) && testCase.sectionId && (
                             <Badge className="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                              {sectionNameById.get(testCase.sectionId) ?? 'Unknown section'}
+                              {sectionPathById.get(testCase.sectionId) ?? 'Unknown section'}
                             </Badge>
                           )}
                           <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{testCase.title}</span>
@@ -737,13 +877,10 @@ export function SuiteDetailPage() {
                         />
                       </div>
                     ) : (
-                      expandedCaseId === testCase.id && (
-                        // Note: only whichever case is currently expanded contributes detail
-                        // content to a printed report — this page renders one case's detail at
-                        // a time by design (click-to-expand), so Outline vs. Details correctly
-                        // hides/shows this block, but Details mode can't retroactively expand
-                        // every other case in the list too. Expand what you want included first.
-                        <div className="print-detail-only mt-2 space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                      expandedCaseIds.has(testCase.id) && (
+                        <div
+                          className="print-detail-only mt-2 space-y-2 text-sm text-slate-600 dark:text-slate-400"
+                        >
                           {testCase.template === 'BDD' ? (
                             testCase.bddLines &&
                             testCase.bddLines.length > 0 && (
@@ -834,14 +971,34 @@ export function SuiteDetailPage() {
                         </div>
                       )
                     )}
-                  </div>
-                ))}
-                {casesQuery.data?.cases.length === 0 && (
+                    </>}
+                    </SortableCaseRow>
+                  );
+                })}
+                {visibleCases.length === 0 && (
                   <p className="p-3 text-sm text-slate-500 dark:text-slate-400">
-                    {showDeleted ? 'No deleted test cases in this section.' : 'No test cases in this section yet.'}
+                    {showDeleted
+                      ? 'No deleted test cases in this section.'
+                      : filtering
+                        ? 'No test cases match the selected filters.'
+                        : activeSectionIds.length > 1
+                          ? 'No test cases in this section or its subsections yet.'
+                          : 'No test cases in this section yet.'}
                   </p>
                 )}
               </div>
+              </SortableContext>
+              {showCaseForm && !showDeleted && !filtering && (
+                <div ref={caseFormRef} className="mt-4">
+                  <CaseForm
+                    availableLabels={labels}
+                    availableSharedStepSets={sharedStepSets}
+                    submitting={createCase.isPending}
+                    onSubmit={(input) => createCase.mutate(input)}
+                    onCancel={() => setShowCaseForm(false)}
+                  />
+                </div>
+              )}
             </>
           ) : (
             <p className="text-sm text-slate-500 dark:text-slate-400">Create a section to start adding test cases.</p>

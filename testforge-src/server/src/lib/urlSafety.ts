@@ -1,6 +1,12 @@
 import { isIP } from 'net';
 import { lookup } from 'dns/promises';
+import type { LookupAddress } from 'dns';
 import { BadRequestError } from './errors';
+
+export interface PublicHttpTarget {
+  url: URL;
+  addresses: LookupAddress[];
+}
 
 function isPrivateOrReservedIPv4(ip: string): boolean {
   const parts = ip.split('.').map(Number);
@@ -53,14 +59,10 @@ function isUnsafeIp(ip: string): boolean {
   return true; // not a recognizable IP literal at all -> treat as unsafe
 }
 
-// Rejects a target that resolves to loopback/private/link-local addresses (including the
-// 169.254.169.254 cloud metadata endpoint) — without this, a webhook URL is a trivial SSRF
-// primitive letting anyone with webhook-management access make the trusted server process issue
-// requests to internal-only services. Call this both at registration time (fast feedback) and
-// again immediately before every delivery (see webhook-dispatcher.ts) — a hostname's DNS record
-// can change between the two (DNS rebinding), so registration-time-only validation isn't a real
-// guarantee on its own.
-export async function assertPublicHttpUrl(rawUrl: string): Promise<void> {
+// Rejects targets resolving to loopback, private, or link-local addresses, including cloud metadata.
+// Validate at webhook registration for fast feedback. At delivery, resolve again and pin the
+// socket lookup to those validated addresses; checking DNS without pinning leaves a rebinding gap.
+export async function resolvePublicHttpUrl(rawUrl: string): Promise<PublicHttpTarget> {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
@@ -69,6 +71,9 @@ export async function assertPublicHttpUrl(rawUrl: string): Promise<void> {
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw new BadRequestError('URL must use http or https');
+  }
+  if (parsed.username || parsed.password) {
+    throw new BadRequestError('URL may not include embedded credentials');
   }
   // WHATWG URL wraps an IPv6 host in brackets in .hostname (e.g. "[::1]" for http://[::1]/) —
   // net.isIP() and the IPv6-range checks below both expect the bare address, so without
@@ -84,10 +89,10 @@ export async function assertPublicHttpUrl(rawUrl: string): Promise<void> {
   const directIpVersion = isIP(hostname);
   if (directIpVersion) {
     if (isUnsafeIp(hostname)) throw new BadRequestError('URL may not target a local or internal address');
-    return;
+    return { url: parsed, addresses: [{ address: hostname, family: directIpVersion }] };
   }
 
-  let addresses: { address: string }[];
+  let addresses: LookupAddress[];
   try {
     addresses = await lookup(hostname, { all: true });
   } catch {
@@ -96,4 +101,9 @@ export async function assertPublicHttpUrl(rawUrl: string): Promise<void> {
   if (addresses.length === 0 || addresses.some((a) => isUnsafeIp(a.address))) {
     throw new BadRequestError('URL may not target a local or internal address');
   }
+  return { url: parsed, addresses };
+}
+
+export async function assertPublicHttpUrl(rawUrl: string): Promise<void> {
+  await resolvePublicHttpUrl(rawUrl);
 }

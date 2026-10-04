@@ -1,6 +1,9 @@
 import crypto from 'crypto';
+import http from 'http';
+import https from 'https';
+import type { LookupAddress } from 'dns';
 import { prisma } from '../config/prisma-client';
-import { assertPublicHttpUrl } from './urlSafety';
+import { resolvePublicHttpUrl } from './urlSafety';
 
 export type WebhookEvent = 'RUN_COMPLETED' | 'RUN_CREATED' | 'CASE_CREATED';
 
@@ -14,18 +17,77 @@ function sign(secret: string, timestamp: string, body: string): string {
   return crypto.createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
 }
 
-// fetch (undici)'s own thrown error is always the generic "fetch failed" -- the actual reason
-// (DNS lookup failure vs. connection refused vs. anything else) lives one level down in
-// err.cause, which an earlier version of this code discarded by logging err.message alone. A DNS
-// failure and a connection refusal both used to log the identical "fetch failed" with zero way to
-// tell them apart from the delivery log. Extracted as a standalone function so the formatting
-// logic can be tested directly against synthetic errors, rather than depending on a real network/
-// DNS failure's timing inside a test.
+// Preserve the underlying network cause when a request error wraps it, so DNS failures and
+// connection failures remain distinguishable in the delivery log. Kept standalone for unit tests.
 export function formatDeliveryError(err: unknown): string {
   if (!(err instanceof Error)) return 'Request failed';
   const cause = err.cause;
   const causeMessage = cause instanceof Error ? cause.message : undefined;
   return causeMessage ? `${err.message}: ${causeMessage}` : err.message;
+}
+
+function createPinnedLookup(addresses: LookupAddress[]): NonNullable<http.RequestOptions['lookup']> {
+  return (_hostname, options, callback) => {
+    const candidates = options.family
+      ? addresses.filter((entry) => entry.family === options.family)
+      : addresses;
+    if (candidates.length === 0) {
+      const error = Object.assign(new Error('No validated address matches the requested IP family'), { code: 'ENOTFOUND' });
+      callback(error, '', 0);
+      return;
+    }
+
+    if (options.all) {
+      callback(null, candidates);
+      return;
+    }
+
+    callback(null, candidates[0].address, candidates[0].family);
+  };
+}
+
+function postJson(
+  url: URL,
+  addresses: LookupAddress[],
+  headers: Record<string, string>,
+  body: string,
+): Promise<{ statusCode: number | null; responseBody: string }> {
+  return new Promise((resolve, reject) => {
+    const requestOptions: http.RequestOptions = {
+      method: 'POST',
+      headers,
+      lookup: createPinnedLookup(addresses),
+      // Do not reuse a socket whose peer was selected for a previous DNS resolution.
+      agent: false,
+      signal: AbortSignal.timeout(5000),
+    };
+
+    const onResponse = (response: http.IncomingMessage) => {
+      const chunks: Buffer[] = [];
+      let remaining = 2000;
+
+      response.on('data', (chunk: Buffer | string) => {
+        if (remaining <= 0) return;
+        const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        const kept = bytes.subarray(0, remaining);
+        chunks.push(kept);
+        remaining -= kept.length;
+      });
+      response.once('error', reject);
+      response.once('end', () => {
+        resolve({
+          statusCode: response.statusCode ?? null,
+          responseBody: Buffer.concat(chunks).toString('utf8').slice(0, 2000),
+        });
+      });
+    };
+    const request = url.protocol === 'https:'
+      ? https.request(url, requestOptions, onResponse)
+      : http.request(url, requestOptions, onResponse);
+
+    request.once('error', reject);
+    request.end(body);
+  });
 }
 
 async function deliver(webhook: { id: string; url: string; secret: string }, payload: unknown) {
@@ -38,23 +100,18 @@ async function deliver(webhook: { id: string; url: string; secret: string }, pay
   let responseBody: string | null = null;
 
   try {
-    // Re-validated here, not just at registration time — a hostname's DNS record can change
-    // between when a webhook was created and when it fires (DNS rebinding), and this also covers
-    // any webhook that was already registered before this safety check existed.
-    await assertPublicHttpUrl(webhook.url);
-    const res = await fetch(webhook.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-TestForge-Signature': signature,
-        'X-TestForge-Timestamp': timestamp,
-      },
-      body,
-      signal: AbortSignal.timeout(5000),
-    });
-    statusCode = res.status;
-    success = res.ok;
-    responseBody = (await res.text()).slice(0, 2000);
+    // Resolve and validate immediately before connecting, then pin the socket to one of those
+    // validated addresses. The original hostname remains for Host and TLS verification, and
+    // Node's HTTP client does not follow redirects.
+    const target = await resolvePublicHttpUrl(webhook.url);
+    const response = await postJson(target.url, target.addresses, {
+      'Content-Type': 'application/json',
+      'X-TestForge-Signature': signature,
+      'X-TestForge-Timestamp': timestamp,
+    }, body);
+    statusCode = response.statusCode;
+    success = statusCode !== null && statusCode >= 200 && statusCode < 300;
+    responseBody = response.responseBody;
   } catch (err) {
     responseBody = formatDeliveryError(err);
   }

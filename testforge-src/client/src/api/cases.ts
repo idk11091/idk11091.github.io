@@ -106,6 +106,10 @@ export function bulkUpdateCases(caseIds: string[], fields: { priority?: Priority
   return apiFetch<{ updated: number }>('/cases/bulk-update', { method: 'PATCH', body: { caseIds, ...fields } });
 }
 
+export function reorderCase(caseId: string, targetIndex: number) {
+  return apiFetch<{ cases: TestCase[] }>('/cases/reorder', { method: 'POST', body: { caseId, targetIndex } });
+}
+
 export function bulkAddLabels(caseIds: string[], labelIds: string[]) {
   return apiFetch<{ updated: number }>('/cases/bulk-add-labels', { method: 'POST', body: { caseIds, labelIds } });
 }

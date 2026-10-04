@@ -6,8 +6,7 @@ A TestRail-style test case management app (full-stack: Node/Express/Prisma backe
 
 Install these first if you don't have them:
 - **Node.js v20 or later** — https://nodejs.org (npm comes bundled with it)
-
-Nothing else is required — the database is a local SQLite file, no separate database server needed.
+- **PostgreSQL** — a local PostgreSQL server for development and testing, or a hosted PostgreSQL database. This guide is for the Web App version; the separate desktop app uses SQLite.
 
 ## 2. Unzip and open a terminal
 
@@ -26,11 +25,7 @@ Remove-Item -Recurse -Force node_modules, server\node_modules, client\node_modul
 rm -rf node_modules server/node_modules client/node_modules
 ```
 
-If you want a completely fresh start (no carried-over data), also delete the database file:
-```powershell
-Remove-Item server\prisma\dev.db -ErrorAction SilentlyContinue
-```
-Otherwise leave it — if `server/prisma/dev.db` exists, whatever projects/cases/runs were in it will already be there when the app starts.
+Database contents live in the PostgreSQL database identified by `DATABASE_URL`, not in a `dev.db` file. To start fresh, create a new empty local database (or clear the existing one only if you intend to delete its data).
 
 ## 4. Install dependencies
 
@@ -54,7 +49,20 @@ Create `client/.env` with:
 VITE_API_BASE_URL="http://localhost:4000/api/v1"
 ```
 
-The defaults in `.env.example` are fine for local use — they're not real secrets, just dev placeholders.
+Set `DATABASE_URL` in `server/.env` to your PostgreSQL connection string. For example, if PostgreSQL is running locally with a database named `testforge` and user `postgres`:
+```
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/testforge?schema=public"
+TEST_DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/testforge_test?schema=public"
+```
+Create both the `testforge` and `testforge_test` databases first. The test database must be disposable and separate from development or production data. Keep real credentials in local environment files; do not commit them. Other development defaults in `.env.example` are placeholders, not production secrets.
+
+Firebase signs the user in and verifies the email; PostgreSQL is the source of truth for TestForge users, roles, and active status. A verified Firebase account must already have a matching PostgreSQL user row; unknown identities cannot self-register. To bootstrap or promote an admin from a trusted server/developer shell, run from `testforge-src`:
+
+```powershell
+npm.cmd run firebase:bootstrap-admin --workspace=server -- --email you@example.com --confirm
+```
+
+This creates or promotes that email's PostgreSQL user row to `ADMIN`. The command requires direct access to the server's configured PostgreSQL database; it does not expose a public admin-creation endpoint. Existing Firebase logins then use the database role. Do not run it against a hosted database unless you intend to grant that account admin access there.
 
 ## 6. Set up the database
 
@@ -65,7 +73,8 @@ npx prisma migrate dev
 npx tsx prisma/seed.ts
 cd ..
 ```
-- `prisma migrate dev` creates `server/prisma/dev.db` and applies the schema (skips cleanly if the db already exists and is up to date).
+- `prisma migrate dev` applies the PostgreSQL migration history to the database selected by `DATABASE_URL`.
+- The desktop app's old SQLite migration files are preserved under `server/prisma/migrations-sqlite-legacy/` for reference; they are not used by this Web App.
 - `prisma/seed.ts` seeds 4 demo users and a populated "Online Banking" demo project — it's safe to re-run; it skips seeding if that data already exists.
 
 ## 7. Run it
@@ -74,9 +83,9 @@ From the project root:
 ```powershell
 npm run dev
 ```
-This starts both the API server (port 4000) and the web app (port 5173) together. Once you see both report "ready," open:
+Run this from the Web App source root (`Portfolio/testforge-src`), which is the folder containing the root `package.json`. On Windows PowerShell, use `npm.cmd run dev` if PowerShell blocks the `npm.ps1` wrapper. This starts both the API server (port 4000) and the Web App (port 5173); it does not start the separate desktop app. Once both report ready, open:
 
-**http://localhost:5173**
+**http://localhost:5173/testforge/**
 
 Log in with any of these seeded accounts:
 
@@ -102,7 +111,7 @@ taskkill /F /PID <the PID number from the output>
 This means `node_modules` (or specifically `node_modules/.prisma`) came from a different operating system or CPU architecture than the one you're running on now. Delete `node_modules` (see step 3) and re-run `npm install`.
 
 **"table does not exist" errors**
-The database wasn't migrated. Re-run `npx prisma migrate dev` from inside `server/`.
+For a fresh local development database, confirm `DATABASE_URL` points to `testforge`, then re-run `npx prisma migrate dev` from inside `server/`. Do not run `migrate dev` against the existing hosted Neon database; Render continues to sync that database with `prisma db push` because it has no migration history.
 
 **Port 5173 says "in use, trying another one" and picks 5174 instead**
 The client will still work, just at `http://localhost:5174` instead — but check `client/.env`'s `VITE_API_BASE_URL` still points at the right server port (4000), and note the *server* may have failed to start for the same reason (see the EADDRINUSE fix above) — check that terminal output too, a working client with a dead server will fail every request.

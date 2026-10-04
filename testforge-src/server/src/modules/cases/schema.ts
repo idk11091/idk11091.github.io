@@ -33,6 +33,11 @@ export const updateCaseSchema = createCaseSchema.partial().extend({
   sectionId: z.string().nullable().optional(),
 });
 
+export const reorderCaseSchema = z.object({
+  caseId: z.string().min(1),
+  targetIndex: z.number().int().min(0),
+});
+
 // Every caseIds/testIds cap in this app was 500 — an arbitrary demo-scale limit a real suite
 // (e.g. a 500+ case CSV import, then "select all") routinely exceeds. Raised to 5000 here and
 // in results/schema.ts's bulkAssignSchema/bulkResultSchema.

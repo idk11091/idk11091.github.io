@@ -10,7 +10,13 @@ import { hashPassword } from '../../lib/password';
 // correctly rejects in production. That SSRF guard has its own dedicated test file
 // (../../lib/urlSafety.test.ts); mocked out here so this file keeps testing what it always
 // tested, instead of every test needing a public-internet target it can't control.
-jest.mock('../../lib/urlSafety', () => ({ assertPublicHttpUrl: jest.fn().mockResolvedValue(undefined) }));
+jest.mock('../../lib/urlSafety', () => ({
+  assertPublicHttpUrl: jest.fn().mockResolvedValue(undefined),
+  resolvePublicHttpUrl: jest.fn(async (rawUrl: string) => ({
+    url: new URL(rawUrl),
+    addresses: [{ address: '127.0.0.1', family: 4 }],
+  })),
+}));
 
 let adminToken: string;
 let projectId: string;
@@ -242,4 +248,5 @@ describe('POST /api/v1/webhooks/:id/test', () => {
       receiverB.close();
     }
   });
+
 });

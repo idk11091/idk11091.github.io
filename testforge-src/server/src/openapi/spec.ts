@@ -768,6 +768,28 @@ export const openApiDocument = {
         responses: { 204: { description: 'Permanently deleted' }, 400: { description: 'Case must be soft-deleted first' } },
       },
     },
+    '/cases/reorder': {
+      post: {
+        tags: ['Cases'],
+        summary: 'Reorder a case within its section (ADMIN/LEAD/TESTER)',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['caseId', 'targetIndex'],
+                properties: {
+                  caseId: { type: 'string' },
+                  targetIndex: { type: 'integer', minimum: 0 },
+                },
+              },
+            },
+          },
+        },
+        responses: { 200: { description: 'Cases reordered' }, 400: { description: 'Case cannot be reordered' } },
+      },
+    },
     '/cases/bulk-update': {
       patch: {
         tags: ['Cases'],

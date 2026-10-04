@@ -10,12 +10,13 @@ import {
   bulkRestoreCasesSchema,
   bulkUpdateCasesSchema,
   createCaseSchema,
+  reorderCaseSchema,
   updateCaseSchema,
 } from './schema';
 import { CASE_LABELS_INCLUDE, CASE_SHARED_STEPS_INCLUDE, serializeSteps, toPublicCase } from './serialize';
 import { buildSectionPathMap, casesToCsv, parseCasesCsv, resolveExportColumns } from './csv';
 import { casesToFeatureFile, parseFeatureFile } from './gherkin';
-import { buildCaseListQuery, buildCaseSort, nextCaseOrderIndex, setCaseLabels } from './service';
+import { buildCaseListQuery, buildCaseSort, nextCaseOrderIndex, reorderCase, setCaseLabels } from './service';
 import { nextSectionOrderIndex } from '../sections/service';
 import { setCaseSharedSteps } from '../sharedSteps/service';
 import { BadRequestError } from '../../lib/errors';
@@ -301,6 +302,29 @@ casesBySectionRouter.post(
 // Mounted at /api/v1/cases
 export const casesRouter = Router();
 casesRouter.use(requireAuth);
+
+casesRouter.post(
+  '/reorder',
+  requireRole(...WRITE_ROLES),
+  asyncHandler(async (req, res) => {
+    const { caseId, targetIndex } = reorderCaseSchema.parse(req.body);
+    const testCase = await prisma.testCase.findUnique({
+      where: { id: caseId },
+      include: { suite: { select: { projectId: true } } },
+    });
+    if (!testCase) throw new NotFoundError('Test case');
+    const cases = await reorderCase(caseId, targetIndex);
+    await logAudit({
+      projectId: testCase.suite.projectId,
+      actorId: req.user!.id,
+      action: 'CASE_REORDERED',
+      entityType: 'TestCase',
+      entityId: caseId,
+      summary: `Reordered case "${testCase.title}"`,
+    });
+    res.json({ cases });
+  }),
+);
 
 // Registered before the /:id routes below — Express matches routes in registration order for
 // the same HTTP method, and /:id would otherwise greedily match /bulk-update as id="bulk-update".

@@ -31,7 +31,7 @@ A full-stack [TestRail](https://www.testrail.com/) clone — test case managemen
 
 ## Tech stack
 
-**Server:** Node.js · TypeScript · Express · Prisma (SQLite) · Zod · Jest/Supertest · swagger-ui-express
+**Server:** Node.js · TypeScript · Express · Prisma (PostgreSQL) · Zod · Jest/Supertest · swagger-ui-express
 **Client:** React · TypeScript · Vite · Tailwind CSS v4 · TanStack Query · React Router · lucide-react
 **Monorepo:** npm workspaces
 
@@ -42,11 +42,12 @@ npm install
 cd server && npx prisma migrate dev && npx tsx prisma/seed.ts && cd ..
 npm run dev
 ```
-Open **http://localhost:5173** and log in with `admin@testforge.local` / `ChangeMe123!` (three more demo accounts — Lead/Tester/Viewer — are listed in [SETUP.md](SETUP.md)).
+This is the Web App version and uses PostgreSQL. SQLite belongs to the separate desktop app; its old migration files are archived and are not used here. Set `DATABASE_URL` to PostgreSQL first; see [SETUP.md](SETUP.md).
+Open **http://localhost:5173/testforge/** and log in with `admin@testforge.local` / `ChangeMe123!` (three more demo accounts — Lead/Tester/Viewer — are listed in [SETUP.md](SETUP.md)). On Windows PowerShell, run the dev command as `npm.cmd run dev` if script execution blocks `npm`.
 
 API docs: http://localhost:4000/api/v1/docs
 
-For a full walkthrough of every feature, see **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)**. For detailed setup steps, troubleshooting, and what to do if you're running this from a zipped copy on a different machine, see **[SETUP.md](SETUP.md)**.
+For a full walkthrough of every feature, see **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)**. For detailed setup steps, including the PostgreSQL database prerequisite and `DATABASE_URL` configuration, see **[SETUP.md](SETUP.md)**.
 
 ## Architecture notes
 
@@ -55,7 +56,7 @@ Data model rationale, auth design, and module-by-module conventions are document
 ## Testing
 
 ```bash
-npm test   # server: Jest + Supertest, 149 tests across 27 files (auth/cases/suites/projects/runs/plans/milestones/csv/webhooks/me/defects/filter/labels/bulk/sections/audit/configurations/gherkin/attachments/results/reports and more)
+npm test   # requires TEST_DATABASE_URL for a dedicated disposable PostgreSQL database
 ```
 Every frontend flow was additionally browser-verified end-to-end (not just typechecked) during development — see the client README notes for details.
 
@@ -63,7 +64,7 @@ Every frontend flow was additionally browser-verified end-to-end (not just typec
 
 **Complete:** the full TestRail-parity backlog (test case templates, Shared Steps, BDD `.feature` import/export, Labels, bulk ops, drag-and-drop, Milestones, Configurations, Rerun, Activity log, dashboards, keyboard shortcuts, Attachments, CSV/`.feature` import/export) plus a 14-report Reporting feature (Cases/Defects/Results/Summary categories, CSV download, print, drilldown). See [CLAUDE.md](CLAUDE.md) for the phase-by-phase history.
 
-**Still open:** generic custom fields per project, a full cross-group run configuration matrix (a simpler single-group Configurations feature is already built), per-project roles (roles are currently global), a Postgres deployment path, and a CI pipeline.
+**Still open:** generic custom fields per project, a full cross-group run configuration matrix (a simpler single-group Configurations feature is already built), per-project roles (roles are currently global), and a CI pipeline.
 
 **Explicitly out of scope**, not oversights (see [CLAUDE.md](CLAUDE.md) for the full reasoning): an AI Evaluation case template, XML/Excel import-export, TestRail's full 4-step CSV import wizard, dynamic run filters, a live Jira integration, and scheduled/emailed reports.
 

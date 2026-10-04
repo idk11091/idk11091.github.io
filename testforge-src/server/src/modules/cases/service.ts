@@ -23,6 +23,29 @@ export async function nextCaseOrderIndex(sectionId: string): Promise<number> {
   return (result._max.orderIndex ?? -1) + 1;
 }
 
+export async function reorderCase(caseId: string, targetIndex: number) {
+  const testCase = await prisma.testCase.findUnique({ where: { id: caseId } });
+  if (!testCase || testCase.isDeleted || !testCase.sectionId) throw new BadRequestError('Test case cannot be reordered');
+
+  const siblings = await prisma.testCase.findMany({
+    where: { sectionId: testCase.sectionId, isDeleted: false },
+    orderBy: [{ orderIndex: 'asc' }, { createdAt: 'asc' }],
+    select: { id: true, orderIndex: true },
+  });
+  const fromIndex = siblings.findIndex((sibling) => sibling.id === caseId);
+  if (fromIndex < 0) throw new BadRequestError('Test case cannot be reordered');
+
+  const reordered = [...siblings];
+  const [moved] = reordered.splice(fromIndex, 1);
+  reordered.splice(Math.min(targetIndex, reordered.length), 0, moved);
+  await prisma.$transaction(
+    reordered.map((sibling, orderIndex) =>
+      prisma.testCase.update({ where: { id: sibling.id }, data: { orderIndex } }),
+    ),
+  );
+  return reordered.map((sibling, orderIndex) => ({ id: sibling.id, orderIndex }));
+}
+
 const SORTABLE_FIELDS = ['title', 'priority', 'type', 'createdAt', 'orderIndex'] as const;
 type SortableField = (typeof SORTABLE_FIELDS)[number];
 

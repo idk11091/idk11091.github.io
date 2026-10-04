@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { EmailVerificationRequiredError, resendVerificationEmail } from '../../api/auth';
 import { ApiError } from '../../lib/apiClient';
 import { Button } from '../../components/Button';
 import { Field, Input, Label } from '../../components/Input';
@@ -13,6 +14,9 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   if (status === 'authenticated') {
     const redirectTo = (location.state as { from?: string } | null)?.from ?? '/projects';
@@ -22,14 +26,35 @@ export function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setVerificationSent(false);
     setSubmitting(true);
     try {
       await login(email, password);
       navigate('/projects');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+      if (err instanceof EmailVerificationRequiredError) {
+        setNeedsVerification(true);
+        setVerificationSent(err.emailSent);
+        setError(err.message);
+      } else {
+        setError(err instanceof ApiError || err instanceof Error ? err.message : 'Something went wrong');
+      }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    setSendingVerification(true);
+    setError(null);
+    try {
+      await resendVerificationEmail();
+      setNeedsVerification(false);
+      setVerificationSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send the verification email. Please try again later.');
+    } finally {
+      setSendingVerification(false);
     }
   }
 
@@ -54,6 +79,22 @@ export function LoginPage() {
             />
           </Field>
           {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {verificationSent && (
+            <p className="mb-3 text-sm text-green-700 dark:text-green-400">
+              Verification email sent. Check your inbox and spam folder, then sign in again.
+            </p>
+          )}
+          {needsVerification && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="mb-3 w-full"
+              disabled={sendingVerification}
+              onClick={handleResendVerification}
+            >
+              {sendingVerification ? 'Sending…' : 'Resend verification email'}
+            </Button>
+          )}
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? 'Signing in…' : 'Sign in'}
           </Button>
