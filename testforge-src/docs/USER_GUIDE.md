@@ -127,6 +127,8 @@ Click **History** on any case row to see every run it's ever appeared in with it
 
 **Export CSV** opens a dialog to pick which sections and which columns to include (leave sections unchecked to export everything). **Import CSV** expects a `title` column at minimum; the section column can be a flat name or a `Parent > Child > Grandchild` hierarchy path, which auto-creates the nested sections if they don't already exist.
 
+You can also choose **Import CSV** directly from the project's **Test Cases** tab. Choose an existing destination suite, or create a new suite as an Admin or Lead, then select your prepared CSV and click **Import cases**. The dialog includes **Download CSV template** for a blank file with supported column headers. Testers can import into existing suites; Viewers cannot import. Imports add new cases rather than updating existing ones, so importing the same file again can create duplicates. If a new suite is created but import fails, it remains available for retry.
+
 **Export .feature** / **Import .feature** round-trip BDD-template cases as real Gherkin `.feature` files — export bundles every BDD case in a suite into one file; import auto-creates a section named after the file's `Feature:` line and creates one case per `Scenario:` block.
 
 ### Soft-delete and restore

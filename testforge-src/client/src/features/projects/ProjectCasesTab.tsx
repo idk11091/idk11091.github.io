@@ -8,6 +8,7 @@ import { Button } from '../../components/Button';
 import { Field, Input, Label } from '../../components/Input';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ApiError } from '../../lib/apiClient';
+import { ProjectCsvImport } from '../cases/ProjectCsvImport';
 
 type Context = { project: Project & { suites: Suite[] } };
 
@@ -69,7 +70,10 @@ export function ProjectCasesTab() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">Test Cases</h1>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Test Cases</h1>
+        {(canManage || user?.role === 'TESTER') && <ProjectCsvImport projectId={projectId!} suites={project.suites} canManage={canManage} />}
+      </div>
       {canManage && (
         <form onSubmit={handleSubmit} className="mb-6 flex items-end gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
           <div className="flex-1">
